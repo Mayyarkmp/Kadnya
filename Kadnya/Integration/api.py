@@ -296,6 +296,7 @@ class ChargeResponseSchema(Schema):
     currency: str
     status: str
     url: str
+    timestamp: int
 
 
 class ChargeErrorSchema(Schema):
@@ -310,7 +311,6 @@ def charge(request, payload: ChargeSchema):
     # print(os.getenv('SECRET_KEY'))
     os.environ["SECRET_KEY"]
     # data = payload.dict()
-    metapayload = {"udf1": "Metapayload 1"}
     reference = {"transaction": payload.transaction, "order": payload.order}
     receipt = {"email": payload.email, "sms": payload.sms}
     customer = {
@@ -361,6 +361,7 @@ def charge(request, payload: ChargeSchema):
             currency=jsonResponse["currency"],
             status=jsonResponse["status"],
             url=jsonResponse["transaction"]["url"],
+            timestamp=jsonResponse["activities"][0]["created"],
         )
         return 200, {
             "id": jsonResponse["id"],
@@ -368,6 +369,7 @@ def charge(request, payload: ChargeSchema):
             "currency": jsonResponse["currency"],
             "status": jsonResponse["status"],
             "url": jsonResponse["transaction"]["url"],
+            "timestamp": jsonResponse["activities"][0]["created"],
         }
     elif status_code == 400:
         return 400, jsonResponse

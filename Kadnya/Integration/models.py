@@ -59,3 +59,4 @@ class Charge(models.Model):
     currency = models.CharField(max_length=10)
     status = models.CharField(max_length=20)
     url = models.CharField(max_length=100)
+    timestamp = models.IntegerField(null=True)
