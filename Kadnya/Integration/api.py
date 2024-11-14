@@ -427,13 +427,4 @@ def retrieve_charge(request, charge_id):
         return 404, jsonResponse
 
 
-class RefundSchema(Schema):
-    charge_id: str
-    amount: int
-    currency: str
-    reason: str = "No one's business"
-    url: str = "http://kadynia.com/post_url"
-    metadata: dict = {"key": "value"}
-
-
 # Todo - Add refund
