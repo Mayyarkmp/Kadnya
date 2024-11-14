@@ -249,6 +249,7 @@ def create_file(request, payload: Form[CreateFileSchema], file: File[UploadedFil
         )
 
     jsonResponse = response.json()
+    print(response)
     if default_storage.exists(temp_file_name):
         default_storage.delete(temp_file_name)
     status_code = response.status_code
@@ -295,7 +296,7 @@ class ChargeResponseSchema(Schema):
     amount: float
     currency: str
     status: str
-    url: str
+    url: str  # the url to go to to continue the payment process (I think)
     timestamp: int
 
 
@@ -375,3 +376,64 @@ def charge(request, payload: ChargeSchema):
         return 400, jsonResponse
     else:
         return 500, jsonResponse
+
+
+class RetrieveChargeErrorSchema(Schema):
+    errors: list
+
+
+class RetrieveChargeSchema(Schema):
+    amount: int
+    currency: str
+    status: str
+    url: str
+    timestamp: int
+
+
+@tapApi.get(
+    "/retrive_charge/{charge_id}",
+    response={200: RetrieveChargeSchema, 404: RetrieveChargeErrorSchema},
+)
+def retrieve_charge(request, charge_id):
+    headers = {
+        "Authorization": testKey,
+    }
+    response = requests.get(
+        url=f"https://api.tap.company/v2/charges/{charge_id}",
+        headers=headers,
+    )
+    jsonResponse = response.json()
+    if response.status_code == 200:
+        # Creating a new object in the data base is optional here, mayebe needs further investigation
+        Charge.objects.create(
+            charge_id=jsonResponse["id"],
+            amount=jsonResponse["amount"],
+            currency=jsonResponse["currency"],
+            status=jsonResponse["status"],
+            url=jsonResponse["transaction"]["url"],
+            timestamp=jsonResponse["activities"][0]["created"],
+        )
+        return (
+            200,
+            {
+                "amount": jsonResponse["amount"],
+                "currency": jsonResponse["currency"],
+                "status": jsonResponse["status"],
+                "url": jsonResponse["transaction"]["url"],
+                "timestamp": jsonResponse["activities"][0]["created"],
+            },
+        )  # Might need to return specific values from the response body - to be discussed later
+    else:
+        return 404, jsonResponse
+
+
+class RefundSchema(Schema):
+    charge_id: str
+    amount: int
+    currency: str
+    reason: str = "No one's business"
+    url: str = "http://kadynia.com/post_url"
+    metadata: dict = {"key": "value"}
+
+
+# Todo - Add refund
