@@ -2,7 +2,7 @@ import requests
 from ninja import NinjaAPI, Schema, UploadedFile, Form, File
 from .models import Lead, License, Wallet, Charge, Transaction
 from .models import File as File2
-from Integration.corridor import corridor
+from PaymentGateways.corridor import corridor
 
 tapApi = NinjaAPI(urls_namespace="tap")
 

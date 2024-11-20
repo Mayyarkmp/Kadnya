@@ -3,7 +3,7 @@ from django.urls import path, include
 from Calendars.api import calendarApi
 
 # from .api import api
-from Integration.api import tapApi
+from PaymentGateways.api import tapApi
 
 urlpatterns = [
     path("admin/", admin.site.urls),

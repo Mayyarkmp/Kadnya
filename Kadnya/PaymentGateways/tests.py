@@ -1,9 +1,9 @@
-from Integration.models import Charge, Lead, License, Wallet
+from PaymentGateways.models import Charge, Lead, License, Wallet
 from django.test import TestCase
 from unittest.mock import patch, MagicMock
 from ninja.testing import TestClient
-from Integration.api import tapApi
-from Integration.models import File as File2
+from PaymentGateways.api import tapApi
+from PaymentGateways.models import File as File2
 from io import BytesIO
 
 

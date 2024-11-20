@@ -1,4 +1,4 @@
-from Integration.Base.service_providers import EdfaPay, Tap
+from PaymentGateways.Base.service_providers import EdfaPay, Tap
 
 
 # the file parameter is dedicated to the case the rqeuest has a file, it's not always used in all requests

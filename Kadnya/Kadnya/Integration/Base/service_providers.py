@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import requests
 import os
-from Integration.models import Order
+from PaymentGateways.models import Order
 from Kadnya.settings import paymenyTechKey, testKey
 from django.core.files.storage import default_storage
 
