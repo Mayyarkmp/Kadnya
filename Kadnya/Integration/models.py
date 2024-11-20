@@ -79,7 +79,7 @@ class Charge(models.Model):
 # --------------------------------------Order---------------------------------------#
 # Used to capture all payment actions from our side, basically it's a safe copy of the transaction records on our end.
 # Optional: possible to add the payment method as well, has to accomodate to all payemnt gateways and their methods (Visa, Master ..etc)
-class Order(models.Model):
+class Transaction(models.Model):
     amount = models.FloatField()
     currency = models.CharField(max_length=10)
     serviceProvider = models.CharField(max_length=40)

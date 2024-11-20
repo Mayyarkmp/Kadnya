@@ -6,5 +6,5 @@ from Integration.api import tapApi
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/tap/", tapApi.urls),
+    path("Integration/tap/", tapApi.urls),
 ]

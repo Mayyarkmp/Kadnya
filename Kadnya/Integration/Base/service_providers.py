@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 import requests
 import os
-from Integration.models import Order
+from Integration.models import Transaction
 from Kadnya.settings import paymenyTechKey, testKey
 from django.core.files.storage import default_storage
 
@@ -22,7 +22,7 @@ class PaymentGateway(ABC):
 # refund
 class Tap(PaymentGateway):
     @staticmethod
-    def create_lead(payload):
+    def create_lead(payload, **kwargs):
         brand = {
             "name": {"en": payload.nameEn, "ar": payload.nameAr},
             "sector": ["Education"],
@@ -132,9 +132,11 @@ class Tap(PaymentGateway):
             json=payload_data,
             headers=headers,
         )
+        return response
 
     @staticmethod
-    def create_file(payload, file):
+    def create_file(payload, **kwargs):
+        file = kwargs["file"]
         temp_file_path = f"tmp/{file.name}"
 
         temp_file_name = default_storage.save(temp_file_path, file)
@@ -155,9 +157,15 @@ class Tap(PaymentGateway):
         return response
 
     @staticmethod
-    def charge(payload):
+    def charge(payload, **kwargs):
         os.environ["SECRET_KEY"]
-        order_id = Order.objects.get(user_id=payload.user_id).id
+        try:
+            print("#1-------------------------------------------")
+            order_id = Transaction.objects.filter(user_id=payload.user_id)[0].id
+        except Exception as e:
+            print("#2++++++++++++++++++++++++++++++++++++++++++++   +")
+            return {"status_code": 500, "error": f"{e}"}
+        print("//////////////////////////////////////////////////")
         reference = {"transaction": order_id, "order": order_id}
         receipt = {"email": payload.email, "sms": payload.sms}
         customer = {
@@ -197,16 +205,28 @@ class Tap(PaymentGateway):
         response = requests.post(
             url="https://api.tap.company/v2/charges", json=payload_data, headers=headers
         )
+        return response.status_code, response.json()
+
+    @staticmethod
+    def update_charge(payload, **kwargs):
+        headers = {
+            "Authorization": "Bearer sk_test_XKokBfNWv6FIYuTMg5sLPjhJ",
+        }
+        response = requests.put(
+            url=f"https://api.tap.company/v2/charges/{kwargs['charge_id']}",
+            headers=headers,
+            json=payload.dict(),
+        )
         return response
 
     @staticmethod
-    def retrieve_charge(charge_id):
+    def retrieve_charge(payload, **kwargs):
         headers = {
             "Authorization": testKey,
         }
 
         response = requests.get(
-            url=f"https://api.tap.company/v2/charges/{charge_id}",
+            url=f"https://api.tap.company/v2/charges/{kwargs['charge_id']}",
             headers=headers,
         )
         return response
@@ -218,7 +238,9 @@ class Tap(PaymentGateway):
 
 class EdfaPay(PaymentGateway):
     @staticmethod
-    def charge(payload):  # corresponds to the initiate operation in the documentation
+    def charge(
+        payload,
+    ):  # corresponds to the initiate operation in the documentati, **kwargson
         payload_data = {
             "action": payload.action,
             "edfa_merchant_id": payload.merchant_id,
@@ -247,7 +269,7 @@ class EdfaPay(PaymentGateway):
         return response
 
     @staticmethod
-    def recur(payload):
+    def recur(payload, **kwargs):
         payload_data = {
             "gwayId": payload.gwayId,  # String , Public transaction id of Payment Gateway
             "order_id": payload.order_id,
@@ -262,7 +284,7 @@ class EdfaPay(PaymentGateway):
         return response
 
     @staticmethod
-    def get_status(payload):
+    def get_status(payload, **kwargs):
         payload_data = {
             "merchant_id": payload.merchant_id,  # String , Public transaction id of Payment Gateway
             "gway_Payment_Id": payload.gway_Payment_Id,
@@ -275,7 +297,7 @@ class EdfaPay(PaymentGateway):
         return response
 
     @staticmethod
-    def refund(payload):
+    def refund(payload, **kwargs):
         payload_data = {
             "edfapay_merchant_id": payload.edfapay_merchant_id,  # String , Public transaction id of Payment Gateway
             "gwayId": payload.gwayId,

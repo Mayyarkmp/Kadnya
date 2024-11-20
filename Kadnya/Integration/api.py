@@ -1,6 +1,6 @@
 import requests
 from ninja import NinjaAPI, Schema, UploadedFile, Form, File
-from .models import Lead, License, Wallet, Charge, Order
+from .models import Lead, License, Wallet, Charge, Transaction
 from .models import File as File2
 from Integration.corridor import corridor
 
@@ -184,44 +184,63 @@ class ChargeErrorSchema(Schema):
     errors: list
 
 
+class Charge500Schema(Schema):
+    status_code: int
+    response: dict
+
+
 # Need update charge in the case where OTP is required such as STCpay
 @tapApi.post(
     "/charge",
-    response={200: ChargeResponseSchema, 400: ChargeErrorSchema},
+    response={200: ChargeResponseSchema, 400: ChargeErrorSchema, 500: Charge500Schema},
 )
 def charge(request, payload: ChargeSchema):
-    Order.objects.create(
-        amount=payload.amount,
-        currency=payload.currency,
-        serviceProvider=payload.serviceProvider,
-        user_id=payload.user_id,
-        merchant_id=payload.merchant_id,
-    )
-
-    response = corridor(payload, task="charge")
-    jsonResponse = response.json()
-    status_code = response.status_code
+    status_code, response = corridor(payload, task="charge")
     if status_code == 200:
+        Transaction.objects.create(
+            amount=payload.amount,
+            currency=payload.currency,
+            serviceProvider=payload.serviceProvider,
+            user_id=payload.user_id,
+            merchant_id=payload.merchant_id,
+        )
         Charge.objects.create(
-            charge_id=jsonResponse["id"],
-            amount=jsonResponse["amount"],
-            currency=jsonResponse["currency"],
-            status=jsonResponse["status"],
-            url=jsonResponse["transaction"]["url"],
-            timestamp=jsonResponse["activities"][0]["created"],
+            charge_id=response["id"],
+            amount=response["amount"],
+            currency=response["currency"],
+            status=response["status"],
+            url=response["transaction"]["url"],
+            timestamp=response["activities"][0]["created"],
         )
         return 200, {
-            "id": jsonResponse["id"],
-            "amount": jsonResponse["amount"],
-            "currency": jsonResponse["currency"],
-            "status": jsonResponse["status"],
-            "url": jsonResponse["transaction"]["url"],
-            "timestamp": jsonResponse["activities"][0]["created"],
+            "id": response["id"],
+            "amount": response["amount"],
+            "currency": response["currency"],
+            "status": response["status"],
+            "url": response["transaction"]["url"],
+            "timestamp": response["activities"][0]["created"],
         }
     elif status_code == 400:
-        return 400, jsonResponse
+        return 400, response
     else:
-        return 500, jsonResponse
+        print(response)
+        return 500, response
+
+
+class UpdateChargeSchema(Schema):
+    name: str = "STC_PAY"
+    response: dict  # resposne: {reference: {otp: 123123123}}
+
+
+# Used to send OTP
+@tapApi.put("/update_charge/{charge_id}")
+def update_charge(request, charge_id: str, payload: UpdateChargeSchema):
+    response = corridor(payload, task="update_charge", charge_id=charge_id)
+    status_code = response.status_code
+    if status_code == 200:
+        return 200, "success: true"
+    else:  # To be checked when we can actually test this
+        return 400, "success: false"
 
 
 class RetrieveChargeErrorSchema(Schema):
@@ -250,7 +269,7 @@ def retrieve_charge(request, charge_id):
     payload = payloadRetrieve()
     payload.charge_id = charge_id
     payload.serviceProvider = "Tap"
-    response = corridor(payload, task="retrieve_charge")
+    response = corridor(payload, task="retrieve_charge", charge_id=charge_id)
     jsonResponse = response.json()
     if response.status_code == 200:
         # Creating a new object in the data base is optional here, mayebe needs further investigation
