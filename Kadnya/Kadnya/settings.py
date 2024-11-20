@@ -16,6 +16,16 @@ import os
 
 load_dotenv()
 
+
+CRONOFY_CLIENT_ID = "DHYQVbEQb2BnLz5zAVxtxRWk9fys21ZT"
+CRONOFY_CLIENT_SECRET = "CRN_gqS2vfz6uMaRQVRoc34L4TmgfHssNjFazW7qJO"
+
+
+CALENDLY_CLIENT_ID = "me6JOBKSpv5HkzTIDV06j8Xx6BTQy2370pdoV1-l4N0"
+CALENDLY_CLIENT_SECRET = "XOpCj7NbmCik8ESlhUjyMm9OUuP4OXsUqayKyl4_7s4"
+
+OAUTH_REDIRECT_URI = "https://127.0.0.1:8000/calendar/auth"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -32,7 +42,7 @@ paymenyTechKey = os.getenv("PAYMENT_TECH_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 
 # Application definition
@@ -46,6 +56,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "Integration",
     "django_extensions",
+    "Calendars",
 ]
 
 MIDDLEWARE = [

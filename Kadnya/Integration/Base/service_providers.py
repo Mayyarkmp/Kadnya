@@ -2,7 +2,7 @@ from abc import ABC
 import requests
 import os
 from Integration.models import Transaction
-from Kadnya.settings import paymenyTechKey, testKey
+from Kadnya.settings import paymenyTechKey, testKey, SECRET_KEY
 from django.core.files.storage import default_storage
 
 
@@ -158,7 +158,6 @@ class Tap(PaymentGateway):
 
     @staticmethod
     def charge(payload, **kwargs):
-        os.environ["SECRET_KEY"]
         try:
             print("#1-------------------------------------------")
             order_id = Transaction.objects.filter(user_id=payload.user_id)[0].id
