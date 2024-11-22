@@ -6,7 +6,7 @@ from PaymentGateways.corridor import corridor
 
 tapApi = NinjaAPI(urls_namespace="tap")
 
-ACCESS_TOKEN = "<ACCESS_TOKEN>"
+ACCESS_TOKEN = "<ACCESS_TOKEN_HERE>"
 
 
 # User info should be absolutely accurate in case of Saudia Arabia
