@@ -6,6 +6,8 @@ from PaymentGateways.corridor import corridor
 
 tapApi = NinjaAPI(urls_namespace="tap")
 
+ACCESS_TOKEN = "<ACCESS_TOKEN>"
+
 
 # User info should be absolutely accurate in case of Saudia Arabia
 # licenseImages is the license image(s) (type is fileID)
