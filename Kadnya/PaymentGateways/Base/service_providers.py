@@ -5,6 +5,9 @@ from PaymentGateways.models import Transaction
 from Kadnya.settings import paymenyTechKey, testKey, SECRET_KEY
 from django.core.files.storage import default_storage
 
+from PaymentGateways.utils.Dateformats import dateToMilliseconds
+from PaymentGateways.utils.generateHash import Hash
+
 
 class PaymentGateway(ABC):
     @staticmethod  # to accomodate for the subclass having its methods static
@@ -158,37 +161,36 @@ class Tap(PaymentGateway):
 
     @staticmethod
     def charge(payload, **kwargs):
-        try:
-            print("#1-------------------------------------------")
-            order_id = Transaction.objects.filter(user_id=payload.user_id)[0].id
-        except Exception as e:
-            print("#2++++++++++++++++++++++++++++++++++++++++++++   +")
-            return {"status_code": 500, "error": f"{e}"}
-        print("//////////////////////////////////////////////////")
-        reference = {"transaction": order_id, "order": order_id}
-        receipt = {"email": payload.email, "sms": payload.sms}
+        # try:
+        #     print("#1-------------------------------------------")
+        #     order_id = Transaction.objects.filter(user_id=payload["user_id"])[0].id
+        # except Exception as e:
+        #     print("#2++++++++++++++++++++++++++++++++++++++++++++   +")
+        #     return {"status_code": 500, "error": f"{e}"}
+        reference = {"transaction": "2", "order": "2"}
+        receipt = {"email": payload["email"], "sms": payload["sms"]}
         customer = {
-            "first_name": payload.firstName,
-            "middle_name": payload.middleName,
-            "last_name": payload.lastName,
-            "email": payload.emailAddress,
+            "first_name": payload["firstName"],
+            "middle_name": payload["middleName"],
+            "last_name": payload["lastName"],
+            "email": payload["emailAddress"],
             "phone": {
-                "country_code": payload.phoneCountryCode,
-                "number": payload.phoneNumber,
+                "country_code": payload["phoneCountryCode"],
+                "number": payload["phoneNumber"],
             },
         }
-        merchant = {"id": payload.merchant_id}
-        source = {"id": payload.ID}
-        post = {"url": payload.postUrl}
-        redirect = {"url": payload.redirectUrl}
+        merchant = {"id": payload["merchant_id"]}
+        source = {"id": payload["ID"]}
+        post = {"url": payload["postUrl"]}
+        redirect = {"url": payload["redirectUrl"]}
         payload_data = {
-            "amount": payload.amount,
-            "currency": payload.currency,
+            "amount": payload["amount"],
+            "currency": payload["currency"],
             "customer_initiated": True,
             "threeDSecure": True,
-            "save_card": payload.saveCard,
-            "description": payload.description,
-            "metadata": payload.metadata,
+            "save_card": payload["saveCard"],
+            "description": payload["description"],
+            "metadata": payload["metadata"],
             "reference": reference,
             "receipt": receipt,
             "customer": customer,
@@ -204,7 +206,17 @@ class Tap(PaymentGateway):
         response = requests.post(
             url="https://api.tap.company/v2/charges", json=payload_data, headers=headers
         )
-        return response.status_code, response.json()
+        status_code = response.status_code
+        response = response.json()
+        extraData = {
+            "id": response["id"],
+            "amount": response["amount"],
+            "currency": response["currency"],
+            "status": response["status"],
+            "timestamp": response["activities"][0]["created"],
+        }
+        data = {"url": response["transaction"]["url"], "extraData": extraData}
+        return status_code, data
 
     @staticmethod
     def update_charge(payload, **kwargs):
@@ -219,7 +231,7 @@ class Tap(PaymentGateway):
         return response
 
     @staticmethod
-    def retrieve_charge(payload, **kwargs):
+    def retrieve_charge(payload, **kwargs):  # setup correct unified response
         headers = {
             "Authorization": testKey,
         }
@@ -228,7 +240,9 @@ class Tap(PaymentGateway):
             url=f"https://api.tap.company/v2/charges/{kwargs['charge_id']}",
             headers=headers,
         )
-        return response
+        status_code = response.status_code
+        response = response.json()
+        return status_code, response
 
     @staticmethod
     def refund():
@@ -238,34 +252,51 @@ class Tap(PaymentGateway):
 class EdfaPay(PaymentGateway):
     @staticmethod
     def charge(
-        payload,
-    ):  # corresponds to the initiate operation in the documentati, **kwargson
+        payload, **kwargs
+    ):  # corresponds to the initiate operation in the documentatin, **kwargs
+        try:
+            hash = Hash.hash_initiate_edfa(
+                order_number="ORD001",
+                order_amount=payload["amount"],
+                order_currency=payload["currency"],
+                order_description=payload["description"],
+                merchant_pass=payload["pass"],
+            )
+        except Exception as e:
+            return 400, {
+                "error": "Validation error, one of [odrer_id order_amount order_currency order_description] is invalid"
+            }
         payload_data = {
-            "action": payload.action,
-            "edfa_merchant_id": payload.merchant_id,
-            "order_id": "ORD001",  # to be audited
-            "order_amount": payload.amount,
-            "order_currency": payload.currency,
-            "order_description": payload.description,
-            "req_token": "N",  # OPTIONAL: depends whether we want card payment option or not, is so the response will contain a token
-            "payer_first_name": payload.firstName,
-            "payer_last_name": payload.lastName,
-            "payer_address": payload.address,  # email
-            "payer_country": payload.country,
-            "payer_city": payload.city,
-            "payer_zip": payload.zip,
-            "payer_email": payload.email,
-            "payer_phone": payload.phone,
-            "payer_ip": payload.ip,
-            "term_url_3ds": payload.redirectUrl,  # redirect url
+            "action": payload["action"],
+            "edfa_merchant_id": payload["merchant_id"],
+            "order_id": "ORD001",  # to be audited, maybe we need an order table to register transactions before validation
+            "order_amount": payload["amount"],
+            "order_currency": payload["currency"],
+            "order_description": payload["description"],
+            "req_token": payload[
+                "req_token"
+            ],  # OPTIONAL: depends whether we want card payment option or not, is so the response will contain a token
+            "payer_first_name": payload["firstName"],
+            "payer_last_name": payload["lastName"],
+            "payer_address": payload["address"],  # email
+            "payer_country": payload["country"],
+            "payer_city": payload["city"],
+            "payer_zip": payload["zip"],
+            "payer_email": payload["email"],
+            "payer_phone": payload["phone"],
+            "payer_ip": payload["ip"],
+            "term_url_3ds": payload["redirectUrl"],  # redirect url
             "auth": "N",  # Indicates that transaction must be only authenticated, but not captured
             "recurring_init": "N",  # OPTIONAL: Initialization of the transaction with possible following recurring
-            "hash": "xxxxxxx-xxxx-xxxxxx",
+            "hash": hash,
         }
         response = requests.post(
-            "https://api.edfapay.com/payment/initiate", files=payload_data
+            "https://api.edfapay.com/payment/initiate", data=payload_data
         )
-        return response
+        status_code = response.status_code
+        response = response.json()
+        data = {"url": response["redirect_url"]}
+        return status_code, data
 
     @staticmethod
     def recur(payload, **kwargs):
@@ -283,17 +314,44 @@ class EdfaPay(PaymentGateway):
         return response
 
     @staticmethod
-    def get_status(payload, **kwargs):
+    def retrieve_payment(
+        payload, **kwargs
+    ):  # Can't test untill webhook is setup so I can get gway_Payment_Id from callback
+        hash = Hash.hash_status_edfa(
+            amount=payload["amount"],
+            payment_id=payload["payment_id"],
+            merchnat_pass=payload["merchant_pass"],
+        )
         payload_data = {
-            "merchant_id": payload.merchant_id,  # String , Public transaction id of Payment Gateway
-            "gway_Payment_Id": payload.gway_Payment_Id,
-            "order_id": payload.order_id,
-            "hash": "xxxxxxx-xxxx-xxxxxx",  # Special signature to validate your request to payment platform
+            "merchant_id": payload[
+                "merchant_id"
+            ],  # String , Public transaction id of Payment Gateway
+            "gway_Payment_Id": payload["gway_Payment_Id"],
+            "order_id": payload["order_id"],
+            "hash": hash,  # Special signature to validate your request to payment platform
         }
         response = requests.post(
             "https://api.edfapay.com/payment/initiate", data=payload_data
         )
-        return response
+        status_code = response.status_code
+        response = response.json()
+        date = response["responseBody"]["date"]
+        timestamp = dateToMilliseconds(date)
+        clientName = response["customer"]["name"]
+        clientEmail = response["customer"]["email"]
+        data = {
+            "amount": response["order"]["amount"],
+            "currency": response["order"]["currency"],
+            "status": response["responseBody"]["status"],
+            "timestamp": timestamp,
+            "extraData": {
+                "clientName": clientName,
+                "clientEmail": clientEmail,
+                "payment_id": response["payment_id"],
+                "order_number": response["order"]["number"],
+            },
+        }
+        return status_code, response
 
     @staticmethod
     def refund(payload, **kwargs):

@@ -1,10 +1,11 @@
 import requests
 from ninja import NinjaAPI, Schema, UploadedFile, Form, File
-from .models import Lead, License, Wallet, Charge, Transaction
+from .models import Lead, License, Wallet, Transaction
 from .models import File as File2
 from PaymentGateways.corridor import corridor
+import json
 
-tapApi = NinjaAPI(urls_namespace="tap")
+paymentGatewayApi = NinjaAPI(urls_namespace="tap")
 
 ACCESS_TOKEN = "<ACCESS_TOKEN_HERE>"
 
@@ -69,7 +70,9 @@ class LeadResponseSchema(Schema):
     id: str
 
 
-@tapApi.post("/create_lead", response={200: LeadResponseSchema, 400: LeadErrorSchema})
+@paymentGatewayApi.post(
+    "/create_lead", response={200: LeadResponseSchema, 400: LeadErrorSchema}
+)
 def create_lead(request, payload: CreateLeadSchema):
     response = corridor(payload, task="create_lead")
     jsonResponse = response.json()
@@ -126,7 +129,9 @@ class FileErrorSchema(Schema):
 # https://api.tap.company/v2/files/
 
 
-@tapApi.post("/create_file", response={200: FileResponseSchema, 404: FileErrorSchema})
+@paymentGatewayApi.post(
+    "/create_file", response={200: FileResponseSchema, 404: FileErrorSchema}
+)
 def create_file(request, payload: Form[CreateFileSchema], file: File[UploadedFile]):
     response = corridor(payload, task="create_file", file=file)
     jsonResponse = response.json()
@@ -146,44 +151,45 @@ def create_file(request, payload: Form[CreateFileSchema], file: File[UploadedFil
 # Remember to set up the webhook
 class ChargeSchema(Schema):
     serviceProvider: str  # eg: Tap EdfaPay Paypal etc..
-    user_id: str
-    amount: int
-    currency: str
-    metadata: dict = {"udf1": "Metadata 1"}
-    description: str
-    # Under reference object
-    transaction: str = "txn_123"
-    order: str = "ord_123"
-    # Under receipt object, used to send the receipt through email/sms to the user
-    email: bool = True
-    sms: bool = True
-    # Under customer object
-    firstName: str = ""
-    middleName: str = "-"
-    lastName: str = ""
-    emailAddress: str
-    # Under customer -> phone
-    phoneCountryCode: int
-    phoneNumber: int
-    merchant_id: str
-    # Under source, specifies the paymeny method
-    ID: str = "src_all"
-    saveCard: bool
-    postUrl: str = "http://kadynia.com/post_url"  # Webhook
-    redirectUrl: str = "http://kadynia.com/redirect_url"
+    # user_id: str
+    # amount: int
+    # currency: str
+    # metadata: dict = {"udf1": "Metadata 1"}
+    # description: str
+    # # Under reference object
+    # transaction: str = "txn_123"
+    # order: str = "ord_123"
+    # # Under receipt object, used to send the receipt through email/sms to the user
+    # email: bool = True
+    # sms: bool = True
+    # # Under customer object
+    # firstName: str = ""
+    # middleName: str = "-"
+    # lastName: str = ""
+    # emailAddress: str
+    # # Under customer -> phone
+    # phoneCountryCode: int
+    # phoneNumber: int
+    # merchant_id: str
+    # # Under source, specifies the paymeny method
+    # ID: str = "src_all"
+    # saveCard: bool
+    # postUrl: str = "http://kadynia.com/post_url"  # Webhook
+    # redirectUrl: str = "http://kadynia.com/redirect_url"
 
 
 class ChargeResponseSchema(Schema):
-    id: str
-    amount: float
-    currency: str
-    status: str
+    # id: str
+    # amount: float
+    # currency: str
+    # status: str
+    # timestamp: int
     url: str  # the url to go to to continue the payment process (I think)
-    timestamp: int
+    extraData: dict = {}
 
 
 class ChargeErrorSchema(Schema):
-    errors: list
+    error: str
 
 
 class Charge500Schema(Schema):
@@ -191,37 +197,33 @@ class Charge500Schema(Schema):
     response: dict
 
 
+@paymentGatewayApi.post("/test")
+def test(request):
+    try:
+        payload = json.loads(request.body)
+        print(payload)
+        return {"received": payload}
+    except json.JSONDecodeError:
+        return {"error": "Invalid JSON payload"}, 400
+
+
 # Need update charge in the case where OTP is required such as STCpay
-@tapApi.post(
+@paymentGatewayApi.post(
     "/charge",
     response={200: ChargeResponseSchema, 400: ChargeErrorSchema, 500: Charge500Schema},
 )
-def charge(request, payload: ChargeSchema):
+def charge(request):
+    payload = json.loads(request.body)
     status_code, response = corridor(payload, task="charge")
     if status_code == 200:
-        Transaction.objects.create(
-            amount=payload.amount,
-            currency=payload.currency,
-            serviceProvider=payload.serviceProvider,
-            user_id=payload.user_id,
-            merchant_id=payload.merchant_id,
-        )
-        Charge.objects.create(
-            charge_id=response["id"],
-            amount=response["amount"],
-            currency=response["currency"],
-            status=response["status"],
-            url=response["transaction"]["url"],
-            timestamp=response["activities"][0]["created"],
-        )
-        return 200, {
-            "id": response["id"],
-            "amount": response["amount"],
-            "currency": response["currency"],
-            "status": response["status"],
-            "url": response["transaction"]["url"],
-            "timestamp": response["activities"][0]["created"],
-        }
+        # Transaction.objects.create(
+        #     amount=payload["amount"],
+        #     currency=payload["currency"],
+        #     serviceProvider=payload["serviceProvider"],
+        #     user_id=payload["user_id"],
+        #     merchant_id=payload["merchant_id"],
+        # )
+        return 200, response
     elif status_code == 400:
         return 400, response
     else:
@@ -235,7 +237,7 @@ class UpdateChargeSchema(Schema):
 
 
 # Used to send OTP
-@tapApi.put("/update_charge/{charge_id}")
+@paymentGatewayApi.put("/update_charge/{charge_id}")
 def update_charge(request, charge_id: str, payload: UpdateChargeSchema):
     response = corridor(payload, task="update_charge", charge_id=charge_id)
     status_code = response.status_code
@@ -253,8 +255,8 @@ class RetrieveChargeSchema(Schema):
     amount: int
     currency: str
     status: str
-    url: str
     timestamp: int
+    extraData: dict = {}
 
 
 class payloadRetrieve:
@@ -262,39 +264,30 @@ class payloadRetrieve:
     serviceProvider = None
 
 
-@tapApi.get(
-    "/retrive_charge/{charge_id}",
-    response={200: RetrieveChargeSchema, 404: RetrieveChargeErrorSchema},
+@paymentGatewayApi.get(
+    "/retrieve_payment",
+    response={200: RetrieveChargeSchema, 400: RetrieveChargeErrorSchema},
 )
-def retrieve_charge(request, charge_id):
+def retrieve_payment(request):
     # special case because the retrieve function needs only charge id, so we need to match the syntax expected in the corridor by sending an object
-    payload = payloadRetrieve()
-    payload.charge_id = charge_id
-    payload.serviceProvider = "Tap"
-    response = corridor(payload, task="retrieve_charge", charge_id=charge_id)
-    jsonResponse = response.json()
+    payload = json.loads(request.body)
+    status_code, response = corridor(payload, task="retrieve_payment")
     if response.status_code == 200:
         # Creating a new object in the data base is optional here, mayebe needs further investigation
-        Charge.objects.create(
-            charge_id=jsonResponse["id"],
-            amount=jsonResponse["amount"],
-            currency=jsonResponse["currency"],
-            status=jsonResponse["status"],
-            url=jsonResponse["transaction"]["url"],
-            timestamp=jsonResponse["activities"][0]["created"],
-        )
+        # Charge.objects.create(
+        #     charge_id=jsonResponse["id"],
+        #     amount=jsonResponse["amount"],
+        #     currency=jsonResponse["currency"],
+        #     status=jsonResponse["status"],
+        #     url=jsonResponse["transaction"]["url"],
+        #     timestamp=jsonResponse["activities"][0]["created"],
+        # )
         return (
             200,
-            {
-                "amount": jsonResponse["amount"],
-                "currency": jsonResponse["currency"],
-                "status": jsonResponse["status"],
-                "url": jsonResponse["transaction"]["url"],
-                "timestamp": jsonResponse["activities"][0]["created"],
-            },
+            response,
         )  # Might need to return specific values from the response body - to be discussed later
     else:
-        return 404, jsonResponse
+        return 400, response
 
 
 # Todo - Add refund

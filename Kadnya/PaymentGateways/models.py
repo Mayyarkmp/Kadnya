@@ -17,7 +17,7 @@ class RequestLog(models.Model):
         return f"{self.method} {self.path} - {self.status_code}"
 
 
-# ------------------------------------Lead------------------------------------#
+# ------------------------------------TAP------------------------------------#
 class Lead(models.Model):
     lead_id = models.CharField(max_length=70)
     en_name = models.CharField(max_length=30)
@@ -66,17 +66,9 @@ class File(models.Model):
     file_id = models.CharField(max_length=70)
 
 
-# ------------------------------------Charge------------------------------------#
-class Charge(models.Model):
-    charge_id = models.CharField(max_length=70)
-    amount = models.FloatField()
-    currency = models.CharField(max_length=10)
-    status = models.CharField(max_length=20)
-    url = models.CharField(max_length=100)
-    timestamp = models.IntegerField(null=True)  # Unix timestamp (in milliseconds)
+# --------------------------------------Transaction---------------------------------------#
 
 
-# --------------------------------------Order---------------------------------------#
 # Used to capture all payment actions from our side, basically it's a safe copy of the transaction records on our end.
 # Optional: possible to add the payment method as well, has to accomodate to all payemnt gateways and their methods (Visa, Master ..etc)
 class Transaction(models.Model):
@@ -88,3 +80,4 @@ class Transaction(models.Model):
     )  # Updates the timestamp every time Object.save() is called
     user_id = models.CharField(max_length=100)
     merchant_id = models.CharField(max_length=100)
+    status = models.CharField(max_length=20, null=True, default="Pending")

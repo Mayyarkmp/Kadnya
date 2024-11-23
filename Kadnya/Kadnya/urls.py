@@ -3,10 +3,10 @@ from django.urls import path, include
 from Calendars.api import calendarApi
 
 # from .api import api
-from PaymentGateways.api import tapApi
+from PaymentGateways.api import paymentGatewayApi
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("payment_gateways/", tapApi.urls),
+    path("payment_gateways/", paymentGatewayApi.urls),
     path("calendar/", calendarApi.urls),
 ]
