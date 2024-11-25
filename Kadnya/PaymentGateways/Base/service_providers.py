@@ -31,9 +31,9 @@ class Tap(PaymentGateway):
     @staticmethod
     def create_lead(payload, **kwargs):
         brand = {
-            "name": {"en": payload.nameEn, "ar": payload.nameAr},
+            "name": {"en": payload["brandNameEn"], "ar": payload["brandNameAr"]},
             "sector": ["Education"],
-            "logo": payload.logo_id,
+            "logo": payload["brandLogo_id"],
             "channelServices": [
                 {"channel": "website", "address": "https://kadnya.com/"}
             ],
@@ -45,88 +45,90 @@ class Tap(PaymentGateway):
             ],
         }
         entity = {
-            "country": payload.country,
-            "is_licensed": payload.is_licensed,
+            "country": payload["entityCountry"],
+            "is_licensed": payload["entity_is_licensed"],
             "license": {
-                "number": payload.licenseNumber,
-                "country": payload.licenseConutry,
-                "type": payload.licenseType,
+                "number": payload["entityLicenseNumber"],
+                "country": payload["entityLicenseCountry"],
+                "type": payload["entityLicenseType"],
                 "documents": [
                     {
-                        "type": payload.licenseDocumentType,
-                        "number": payload.licenseDocumentNumber,
-                        "issuing_country": payload.licenseIssuingCountry,
-                        "issuing_date": payload.issuingDate,
-                        "expiry_date": payload.expiryDate,
-                        "images": payload.licenseImages,
+                        "type": payload["entityLicenseDocumentType"],
+                        "number": payload["entityLicenseDocumentNumber"],
+                        "issuing_country": payload[
+                            "entityLicenseDocumentIssuingCountry"
+                        ],
+                        "issuing_date": payload["entityLicenseDocumentIssuingDate"],
+                        "expiry_date": payload["entityLicenseDocumentExpiryDate"],
+                        "images": payload["entityLicenseDocumentImages"],
                     }
                 ],
             },
         }
         wallet = {
             "bank": {
-                "name": payload.bankName,
+                "name": payload["walletBankName"],
                 "account": {
-                    "name": payload.accountName,
-                    "number": payload.accountNumber,
-                    "swift": payload.accountSwift,
-                    "iban": payload.accountIban,
+                    "name": payload["walletAccountName"],
+                    "number": payload["walletAccountNumber"],
+                    "swift": payload["walletAccountSwift"],
+                    "iban": payload["walletAccountIban"],
                 },
                 "documents": [
                     {
-                        "type": payload.documentType,
-                        "number": payload.documentNumber,
-                        "issuing_country": payload.documentIssuingCountry,
-                        "issuing_date": payload.documentIssuingDate,
-                        "images": payload.documentImages,
+                        "type": payload["WalletBankDocumentType"],
+                        "number": payload["WalletBankDocumentNumber"],
+                        "issuing_country": payload["WalletBankDocumentIssuingCountry"],
+                        "issuing_date": payload["WalletBankDocumentIssuingDate"],
+                        "images": payload["WalletBankDocumentImages"],
                     }
                 ],
             }
         }
         user = {
             "name": {
-                "lang": payload.userLang,
-                "title": payload.userTitle,
-                "first": payload.userFirstName,
-                "middle": payload.userMiddleName,
-                "last": payload.userLastname,
+                "lang": payload["userLang"],
+                "title": payload["userTitle"],
+                "first": payload["userFirstName"],
+                "middle": payload["userMiddleName"],
+                "last": payload["userLastName"],
             },
             "email": [
                 {
-                    "type": payload.userEmailType,
-                    "address": payload.userEmailAddress,
+                    "type": payload["userEmailType"],
+                    "address": payload["userEmailAddress"],
                     "primary": True,
                 }
             ],
             "phone": [
                 {
-                    "type": payload.phoneNumberType,
-                    "country_code": payload.phoneCountryCode,
-                    "number": payload.phoneNumber,
+                    "type": payload["userPhoneType"],
+                    "country_code": payload["userPhoneCountryCode"],
+                    "number": payload["userPhoneNumber"],
                 }
             ],
-            "nationality": payload.nationality,
+            "nationality": payload["userNationality"],
             "identification": {
-                "number": payload.idNumber,
-                "type": payload.idType,
-                "issuer": payload.Isuuer,
-                "images": payload.idImages,
+                "number": payload["userIdentificationNumber"],
+                "type": payload["userIdentificationType"],
+                "issuer": payload["userIdentificationIssuer"],
+                "images": payload["userIdentificationImages"],
             },
             "birth": {
-                "country": payload.birthCountry,
-                "city": payload.birthCity,
-                "birth_date": payload.birthDate,
+                "country": payload["userBirthCountry"],
+                "city": payload["userBirthCity"],
+                "birth_date": payload["userBirthDate"],
             },
             "primary": True,
         }
-        post = {"url": "https://kadnya.com/pay"}
+        post = {"url": payload["postUrl"]}
         payload_data = {
             "brand": brand,
             "entity": entity,
             "wallet": wallet,
             "user": user,
             "post": post,
-            "metadata": payload.metadata,
+            "metadata": {"mtd": "metadata"},
             "payment_provider": {"id": paymenyTechKey},
         }
         headers = {
@@ -139,7 +141,9 @@ class Tap(PaymentGateway):
             json=payload_data,
             headers=headers,
         )
-        return response
+        status_code = response.status_code
+        response = response.json()
+        return status_code, response
 
     @staticmethod
     def create_file(payload, **kwargs):
@@ -173,7 +177,10 @@ class Tap(PaymentGateway):
         #     return {"status_code": 500, "error": f"{e}"}
         reference = {"transaction": "2", "order": "2"}
         print(payload)
-        receipt = {"email": payload["email"], "sms": payload["sms"]}
+        receipt = {
+            "email": payload["email_notification"],
+            "sms": payload["sms_notification"],
+        }
         customer = {
             "first_name": payload["firstName"],
             "middle_name": payload["middleName"],
@@ -185,7 +192,7 @@ class Tap(PaymentGateway):
             },
         }
         merchant = {"id": payload["merchant_id"]}
-        source = {"id": payload["ID"]}
+        source = {"id": payload["source_id"]}
         post = {"url": payload["postUrl"]}
         redirect = {"url": payload["redirectUrl"]}
         payload_data = {
@@ -195,7 +202,6 @@ class Tap(PaymentGateway):
             "threeDSecure": True,
             "save_card": payload["saveCard"],
             "description": payload["description"],
-            "metadata": payload["metadata"],
             "reference": reference,
             "receipt": receipt,
             "customer": customer,
@@ -290,18 +296,16 @@ class EdfaPay(PaymentGateway):
                 "error": "Validation error, one of [odrer_id order_amount order_currency order_description] is invalid"
             }
         payload_data = {
-            "action": payload["action"],
+            "action": "SALE",  # Currently it's always SALE
             "edfa_merchant_id": payload["merchant_id"],
             "order_id": "ORD001",  # to be audited, maybe we need an order table to register transactions before validation
             "order_amount": payload["amount"],
             "order_currency": payload["currency"],
             "order_description": payload["description"],
-            "req_token": payload[
-                "req_token"
-            ],  # OPTIONAL: depends whether we want card payment option or not, is so the response will contain a token
+            "req_token": payload["req_token"],  # OPTIONAL: in case of card payment
             "payer_first_name": payload["firstName"],
             "payer_last_name": payload["lastName"],
-            "payer_address": payload["address"],  # email
+            "payer_address": payload["address"],  # Maybe not Required
             "payer_country": payload["country"],
             "payer_city": payload["city"],
             "payer_zip": payload["zip"],
@@ -318,6 +322,7 @@ class EdfaPay(PaymentGateway):
         )
         status_code = response.status_code
         response = response.json()
+        print(response)
         if status_code == 200:
             data = {"url": response["redirect_url"]}
             return 200, data

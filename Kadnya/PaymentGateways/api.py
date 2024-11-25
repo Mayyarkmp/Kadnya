@@ -16,50 +16,50 @@ ACCESS_TOKEN = "<ACCESS_TOKEN_HERE>"
 # same goes for idImages
 class CreateLeadSchema(Schema):
     serviceProvider: str = "Tap"
-    nameEn: str
-    nameAr: str
-    logo_id: str
-    country: str
-    is_licensed: bool
-    licenseNumber: str
-    licenseDocumentNumber: str
-    licenseConutry: str
-    licenseIssuingCountry: str
-    issuingDate: str
-    expiryDate: str
-    licenseImages: list[str]
-    bankName: str
-    accountName: str
-    accountSwift: str
-    accountIban: str
-    accountNumber: str
-    documentNumber: str
-    documentIssuingCountry: str
-    documentIssuingDate: str
-    documentImages: list[str]
-    userLang: str
+    brandNameEn: str
+    brandNameAr: str
+    brandLogo_id: str
+    entityCountry: str
+    entity_is_licensed: bool
+    entityLicenseNumber: str
+    entityLicenseCountry: str
+    entityLicenseType: str
+    entityLicenseDocumentType: str
+    entityLicenseDocumentNumber: str
+    entityLicenseDocumentIssuingCountry: str
+    entityLicenseDocumentIssuingDate: str
+    entityLicenseDocumentExpiryDate: str
+    entityLicenseDocumentImages: list[str]
+    walletBankName: str
+    walletAccountName: str
+    walletAccountNumber: str
+    walletAccountSwift: str
+    walletAccountIban: str
+    WalletBankDocumentType: str
+    WalletBankDocumentNumber: str
+    WalletBankDocumentIssuingCountry: str
+    WalletBankDocumentIssuingDate: str
+    WalletBankDocumentImages: list[str]
     userFirstName: str
-    userLastname: str
+    userMiddleName: str
+    userLastName: str
+    userLang: str
+    userTitle: str = "Mr"
     userEmailType: str
     userEmailAddress: str
-    phoneCountryCode: str
-    phoneNumber: str
-    nationality: str
-    idNumber: str
-    idType: str
-    Isuuer: str
-    idImages: list[str]
-    birthCountry: str
-    birthCity: str
-    birthDate: str
-    metadata: dict
-    postUrl: str = "https://kadnya.com/pay"
-    licenseDocumentType: str = "commercial_registration"
-    licenseType: str = "commercial_registration"
-    documentType: str = "Bank Statement"
-    userMiddleName: str = "-"
-    userTitle: str = "Mr"
-    phoneNumberType: str = "WORK"
+    userEmailPrimary: bool
+    userPhoneType: str = "WORK"
+    userPhoneCountryCode: str
+    userPhoneNumber: str
+    userNationality: str
+    userIdentificationNumber: str
+    userIdentificationType: str
+    userIdentificationIssuer: str
+    userIdentificationImages: list[str]
+    userBirthCountry: str
+    userBirthCity: str
+    userBirthDate: str
+    postUrl: str
 
 
 class LeadErrorSchema(Schema):
@@ -74,39 +74,34 @@ class LeadResponseSchema(Schema):
     "/create_lead", response={200: LeadResponseSchema, 400: LeadErrorSchema}
 )
 def create_lead(request, payload: CreateLeadSchema):
-    response = corridor(payload, task="create_lead")
-    jsonResponse = response.json()
-    status_code = response.status_code
-    if "errors" in jsonResponse.keys():
+    status_code, response = corridor(payload.dict(), task="create_lead")
+
+    if "errors" in response.keys():
         status_code = 400
 
     if status_code == 200:
-        Lead.objects.create(
-            lead_id=jsonResponse["id"],
-            en_name=payload.nameEn,
-            ar_name=payload.nameAr,
-            country=payload.country,
-            is_licensed=payload.is_licensed,
-        )
-        License.objects.create(
-            number=payload.licenseNumber,
-            country=payload.licenseConutry,
-            type=payload.licenseType,
-        )
-        Wallet.objects.create(
-            bankName=payload.bankName,
-            accountName=payload.accountName,
-            accountNumber=payload.accountNumber,
-            accountSwift=payload.accountSwift,
-            accountIban=payload.accountIban,
-        )
-        return (200, {"id": jsonResponse["id"]})
+        # Lead.objects.create(
+        #     lead_id=response["id"],
+        #     en_name=payload.brandNameEn,
+        #     ar_name=payload.brandNameAr,
+        #     country=payload.country,
+        #     is_licensed=payload.is_licensed,
+        # )
+        # License.objects.create(
+        #     number=payload.licenseNumber,
+        #     country=payload.licenseConutry,
+        #     type=payload.licenseType,
+        # )
+        # Wallet.objects.create(
+        #     bankName=payload.bankName,
+        #     accountName=payload.accountName,
+        #     accountNumber=payload.accountNumber,
+        #     accountSwift=payload.accountSwift,
+        #     accountIban=payload.accountIban,
+        # )
+        return (200, {"id": response["id"]})
     elif status_code == 400:
-        return (400, jsonResponse)
-    elif status_code == 500:
-        return (500, jsonResponse)
-    else:
-        return (status_code, "Unknown error occured")
+        return (400, response)
 
 
 class CreateFileSchema(Schema):

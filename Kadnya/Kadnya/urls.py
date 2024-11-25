@@ -9,4 +9,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("payment_gateways/", paymentGatewayApi.urls),
     path("calendar/", calendarApi.urls),
+    path("", include("ui_test.urls")),
 ]

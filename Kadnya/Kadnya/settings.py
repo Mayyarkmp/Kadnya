@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "PaymentGateways",
     "django_extensions",
     "Calendars",
+    "ui_test",
 ]
 
 MIDDLEWARE = [
