@@ -1,309 +1,187 @@
-from PaymentGateways.models import Charge, Lead, License, Wallet
+import json
 from django.test import TestCase
-from unittest.mock import patch, MagicMock
 from ninja.testing import TestClient
-from PaymentGateways.api import tapApi
-from PaymentGateways.models import File as File2
-from io import BytesIO
+from PaymentGateways.api import paymentGatewayApi
 
 
-class ChargeEndpointTestCase(TestCase):
+class PaymentGatewayTests(TestCase):
     def setUp(self):
-        self.client = TestClient(tapApi)
-        self.valid_payload = {
+        self.client = TestClient(paymentGatewayApi)
+
+    def test_charge_success(self):
+        """
+        Test the `/charge` endpoint with valid data and expect a 200 response.
+        """
+        valid_payload = {
+            "user_id": "1234",
             "serviceProvider": "Tap",
-            "user_id": "user123",
-            "amount": 100,
-            "currency": "USD",
-            "metadata": {"udf1": "Test Metadata"},
-            "description": "Test transaction",
-            "transaction": "txn_123",
-            "order": "ord_123",
-            "email": True,
-            "sms": True,
-            "firstName": "John",
-            "middleName": "-",
-            "lastName": "Doe",
-            "emailAddress": "john.doe@example.com",
-            "phoneCountryCode": 1,
-            "phoneNumber": 1234567890,
-            "merchant_id": "merchant123",
+            "amount": "2",
+            "currency": "AED",
+            "customer_initiated": True,
+            "threeDSecure": True,
+            "save_card": "false",
+            "description": "test",
+            "metadata": {"udf1": "Metadata 1"},
+            "phoneCountryCode": 965,
+            "phoneNumber": 51234567,
+            "saveCard": "false",
+            "email": "true",
+            "sms": "true",
+            "firstName": "test",
+            "middleName": "test",
+            "lastName": "test",
+            "emailAddress": "test@test.com",
+            "country_code": "965",
+            "number": "51234567",
+            "merchant_id": "merchant_4m4B5624940fGnu21mj9W912",
             "ID": "src_all",
-            "saveCard": False,
             "postUrl": "http://kadynia.com/post_url",
-            "redirectUrl": "http://kadynia.com/redirect_url",
+            "redirectUrl": "http://kadynia.com/post_url",
         }
 
-    @patch("Integration.corridor")
-    def test_charge_success(self, mock_corridor):
-        mock_corridor.return_value.status_code = 200
-        mock_corridor.return_value.json.return_value = {
-            "id": "charge123",
-            "amount": 100.0,
-            "currency": "USD",
-            "status": "success",
-            "transaction": {"url": "http://paymentgateway.com/continue"},
-            "activities": [{"created": 1634155200}],
-        }
+        response = self.client.post("/charge", json=valid_payload)
 
-        response = self.client.post("/charge", json=self.valid_payload)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            {
-                "id": "charge123",
-                "amount": 100.0,
-                "currency": "USD",
-                "status": "success",
-                "url": "http://paymentgateway.com/continue",
-                "timestamp": 1634155200,
-            },
-        )
 
-    @patch("Integration.corridor")
-    def test_charge_failure(self, mock_corridor):
-        mock_corridor.return_value.status_code = 400
-        mock_corridor.return_value.json.return_value = {"errors": ["Invalid data"]}
+        self.assertIn("url", response.json())
+        self.assertIn("extraData", response.json())
+        extra_data = response.json()["extraData"]
+        self.assertIn("id", extra_data)
+        self.assertIn("amount", extra_data)
+        self.assertIn("currency", extra_data)
+        self.assertIn("status", extra_data)
+        self.assertIn("timestamp", extra_data)
 
-        response = self.client.post("/charge", json=self.valid_payload)
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json(), {"errors": ["Invalid data"]})
-
-    @patch("Integration.corridor")
-    def test_charge_server_error(self, mock_corridor):
-        mock_corridor.return_value.status_code = 500
-        mock_corridor.return_value.json.return_value = {
-            "errors": ["Internal server error"]
+    def test_charge_bad_request(self):
+        invalid_payload = {
+            "user_id": "1234",
+            "serviceProvider": "Tap",
+            "amount": "2",
+            "currency": "AEDasd",
+            "customer_initiated": True,
+            "threeDSecure": True,
+            "save_card": "false",
+            "description": "test",
+            "metadata": {"udf1": "Metadata 1"},
+            "phoneCountryCode": 965,
+            "phoneNumber": 51234567,
+            "saveCard": "false",
+            "email": "true",
+            "sms": "true",
+            "firstName": "test",
+            "middleName": "test",
+            "lastName": "test",
+            "emailAddress": "test@test.com",
+            "country_code": "965",
+            "number": "51234567",
+            "merchant_id": "merchant_4m4B5624940fGnu21mj9W912",
+            "ID": "src_all",
+            "postUrl": "http://kadynia.com/post_url",
+            "redirectUrl": "http://kadynia.com/post_url",
         }
 
-        response = self.client.post("/charge", json=self.valid_payload)
-        self.assertEqual(response.status_code, 500)
-        self.assertEqual(response.json(), {"errors": ["Internal server error"]})
+        response = self.client.post("/charge", json=invalid_payload)
 
+        self.assertEqual(response.status_code, 400)
 
-# class CreateLeadEndpointTestCase(TestCase):
-#     def setUp(self):
-#         self.client = TestClient(tapApi)
-#         self.valid_payload = {
-#             "serviceProvider": "Tap",
-#             "nameEn": "Test Name",
-#             "nameAr": "اختبار",
-#             "logo_id": "logo123",
-#             "country": "SA",
-#             "is_licensed": True,
-#             "licenseNumber": "123456789",
-#             "licenseDocumentNumber": "987654321",
-#             "licenseConutry": "SA",
-#             "licenseIssuingCountry": "SA",
-#             "issuingDate": "2023-01-01",
-#             "expiryDate": "2025-01-01",
-#             "licenseImages": ["image1", "image2"],
-#             "bankName": "Test Bank",
-#             "accountName": "Test Account",
-#             "accountSwift": "SWIFT123",
-#             "accountIban": "IBAN123456789",
-#             "accountNumber": "123456789",
-#             "documentNumber": "DOC123",
-#             "documentIssuingCountry": "SA",
-#             "documentIssuingDate": "2023-01-01",
-#             "documentImages": ["doc1", "doc2"],
-#             "userLang": "en",
-#             "userFirstName": "John",
-#             "userLastname": "Doe",
-#             "userEmailType": "work",
-#             "userEmailAddress": "john.doe@example.com",
-#             "phoneCountryCode": "+966",
-#             "phoneNumber": "555123456",
-#             "nationality": "SA",
-#             "idNumber": "ID123456789",
-#             "idType": "National ID",
-#             "Isuuer": "Saudi Arabia",
-#             "idImages": ["id1", "id2"],
-#             "birthCountry": "SA",
-#             "birthCity": "Riyadh",
-#             "birthDate": "1990-01-01",
-#             "metadata": {"key": "value"},
-#             "postUrl": "https://kadnya.com/pay",
-#             "licenseDocumentType": "commercial_registration",
-#             "licenseType": "commercial_registration",
-#             "documentType": "Bank Statement",
-#             "userMiddleName": "-",
-#             "userTitle": "Mr",
-#             "phoneNumberType": "WORK",
-#         }
+        self.assertIn("error", response.json())
 
-#     @patch("Integration.corridor")
-#     def test_create_lead_success(self, mock_corridor):
-#         mock_corridor.return_value.status_code = 200
-#         mock_corridor.return_value.json.return_value = {"id": "lead123"}
+    def test_create_lead_success(self):
+        valid_payload = {
+            "nameEn": "om kelthom",
+            "nameAr": "أم كلثوم",
+            "logo_id": "logo123",
+            "sector": "Education",
+            "channel": "website",
+            "channel_address": "https://kadnya.com/",
+            "segment_type_code": "non_profit",
+            "segment_team_code": "small",
+            "term_general_agree": "true",
+            "term_chargeback_agree": "true",
+            "term_refund_agree": "true",
+            "country": "CountryName",
+            "is_licensed": "true",
+            "licenseNumber": "LIC12345",
+            "licenseCountry": "LicenseCountry",
+            "licenseType": "TypeA",
+            "licenseDocumentType": "DocTypeA",
+            "licenseDocumentNumber": "DocNum123",
+            "licenseIssuingCountry": "IssuingCountry",
+            "issuingDate": "2024-01-01",
+            "expiryDate": "2025-01-01",
+            "licenseImages": ["image1.png", "image2.png"],
+            "bankName": "Bank ABC",
+            "accountName": "Account Holder",
+            "accountNumber": "123456789",
+            "accountSwift": "SWIFT123",
+            "accountIban": "IBAN123456",
+            "documentType": "BankDoc",
+            "documentNumber": "DocNum789",
+            "documentIssuingCountry": "BankDocCountry",
+            "documentIssuingDate": "2023-01-01",
+            "documentImages": ["docImage1.png", "docImage2.png"],
+            "userLang": "en",
+            "userTitle": "Mr.",
+            "userFirstName": "John",
+            "userMiddleName": "M.",
+            "userLastname": "Doe",
+            "userEmailType": "work",
+            "userEmailAddress": "john.doe@example.com",
+            "phoneNumberType": "mobile",
+            "phoneCountryCode": "+1",
+            "phoneNumber": "1234567890",
+            "nationality": "American",
+            "idNumber": "ID123456",
+            "idType": "Passport",
+            "Isuuer": "Gov Authority",
+            "idImages": ["idImage1.png"],
+            "birthCountry": "USA",
+            "birthCity": "New York",
+            "birthDate": "1990-01-01",
+            "metadata": "Additional Metadata",
+        }
 
-#         response = self.client.post("/create_lead", json=self.valid_payload)
-#         self.assertEqual(response.status_code, 200)
-#         self.assertEqual(response.json(), {"id": "lead123"})
+        response = self.client.post("/charge", json=valid_payload)
 
-#         self.assertEqual(Lead.objects.count(), 1)
-#         self.assertEqual(License.objects.count(), 1)
-#         self.assertEqual(Wallet.objects.count(), 1)
+        self.assertEqual(response.status_code, 200)
 
-#     @patch("Integration.corridor")
-#     def test_create_lead_failure(self, mock_corridor):
-#         mock_corridor.return_value.status_code = 400
-#         mock_corridor.return_value.json.return_value = {"errors": ["Invalid data"]}
+        self.assertIn("id", response.json())
 
-#         response = self.client.post("/create_lead", json=self.valid_payload)
-#         self.assertEqual(response.status_code, 400)
-#         self.assertEqual(response.json(), {"errors": ["Invalid data"]})
+    def test_tap_retrieve_success(self):
+        payload = {
+            "serviceProvider": "Tap",
+            "charge_id": "chg_TS07A1520241328i2M32511834",
+        }
+        response = self.client.post("/retireve_payment", json=payload)
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()
+        self.assertIn("amount", response_data)
+        self.assertIsInstance(response_data["amount"], int)
 
-#         self.assertEqual(Lead.objects.count(), 0)
-#         self.assertEqual(License.objects.count(), 0)
-#         self.assertEqual(Wallet.objects.count(), 0)
+        self.assertIn("currency", response_data)
+        self.assertIsInstance(response_data["currency"], str)
 
-#     @patch("Integration.corridor")
-#     def test_create_lead_server_error(self, mock_corridor):
-#         mock_corridor.return_value.status_code = 500
-#         mock_corridor.return_value.json.return_value = {
-#             "error": "Internal Server Error"
-#         }
+        self.assertIn("status", response_data)
+        self.assertIsInstance(response_data["status"], str)
 
-#         response = self.client.post("/create_lead", json=self.valid_payload)
-#         self.assertEqual(response.status_code, 500)
-#         self.assertEqual(response.json(), {"error": "Internal Server Error"})
+        self.assertIn("timestamp", response_data)
+        self.assertIsInstance(response_data["timestamp"], int)
 
-#         self.assertEqual(Lead.objects.count(), 0)
-#         self.assertEqual(License.objects.count(), 0)
-#         self.assertEqual(Wallet.objects.count(), 0)
+        self.assertIn("extraData", response_data)
+        self.assertIsInstance(response_data["extraData"], dict)
 
+        extra_data = response_data["extraData"]
+        self.assertIn("merchant_id", extra_data)
+        self.assertIsInstance(extra_data["merchant_id"], str)
 
-# class CreateFileEndpointTestCase(TestCase):
-#     def setUp(self):
-#         self.client = TestClient(tapApi)
-#         self.valid_payload = {
-#             "serviceProvider": "Tap",
-#             "purpose": "Verification",
-#             "title": "Test File",
-#             "expires_at": "1913743462",
-#             "file_link_create": True,
-#         }
-#         self.valid_file = BytesIO(b"dummy file content")
-#         self.valid_file.name = "test_file.txt"
+        self.assertIn("source", extra_data)
+        self.assertIsInstance(extra_data["source"], str)
 
-#     @patch("Integration.corridor")
-#     def test_create_file_success(self, mock_corridor):
-#         mock_response = MagicMock()
-#         mock_response.status_code = 200
-#         mock_response.json.return_value = {"id": "file123"}
-#         mock_corridor.return_value = mock_response
+        self.assertIn("url", extra_data)
+        self.assertIsInstance(extra_data["url"], str)
 
-#         response = self.client.post(
-#             "/create_file",
-#             data=self.valid_payload,
-#             files={"file": self.valid_file},
-#         )
-#         self.assertEqual(response.status_code, 200)
-#         self.assertEqual(response.json(), {"id": "file123"})
+        self.assertIn("expiry", extra_data)
+        self.assertIsInstance(extra_data["expiry"], int)
 
-#         self.assertEqual(File2.objects.count(), 1)
-#         self.assertEqual(File2.objects.first().file_id, "file123")
-
-#     @patch("Integration.corridor")
-#     def test_create_file_not_found(self, mock_corridor):
-#         mock_response = MagicMock()
-#         mock_response.status_code = 404
-#         mock_response.json.return_value = {"errors": ["File not found"]}
-#         mock_corridor.return_value = mock_response
-
-#         response = self.client.post(
-#             "/create_file",
-#             data=self.valid_payload,
-#             files={"file": self.valid_file},
-#         )
-#         self.assertEqual(response.status_code, 404)
-#         self.assertEqual(response.json(), {"errors": ["File not found"]})
-
-#         self.assertEqual(File2.objects.count(), 0)
-
-#     @patch("Integration.corridor")
-#     def test_create_file_server_error(self, mock_corridor):
-#         mock_response = MagicMock()
-#         mock_response.status_code = 500
-#         mock_response.json.return_value = {"error": "Internal Server Error"}
-#         mock_corridor.return_value = mock_response
-
-#         response = self.client.post(
-#             "/create_file",
-#             data=self.valid_payload,
-#             files={"file": self.valid_file},
-#         )
-#         self.assertEqual(response.status_code, 500)
-#         self.assertEqual(response.json(), {"error": "Internal Server Error"})
-
-#         self.assertEqual(File2.objects.count(), 0)
-
-
-# class RetrieveChargeEndpointTestCase(TestCase):
-#     def setUp(self):
-#         self.client = TestClient(tapApi)
-#         self.valid_charge_id = "charge123"
-#         self.payload_retrieve = {
-#             "amount": 1000,
-#             "currency": "USD",
-#             "status": "success",
-#             "url": "http://example.com/payment",
-#             "timestamp": 1637854800,
-#         }
-
-#     @patch("Integration.corridor")
-#     def test_retrieve_charge_success(self, mock_corridor):
-#         mock_response = MagicMock()
-#         mock_response.status_code = 200
-#         mock_response.json.return_value = {
-#             "id": self.valid_charge_id,
-#             "amount": self.payload_retrieve["amount"],
-#             "currency": self.payload_retrieve["currency"],
-#             "status": self.payload_retrieve["status"],
-#             "transaction": {"url": self.payload_retrieve["url"]},
-#             "activities": [{"created": self.payload_retrieve["timestamp"]}],
-#         }
-#         mock_corridor.return_value = mock_response
-
-#         response = self.client.get(f"/retrive_charge/{self.valid_charge_id}")
-#         self.assertEqual(response.status_code, 200)
-#         self.assertEqual(response.json(), self.payload_retrieve)
-
-#         self.assertEqual(Charge.objects.count(), 1)
-#         charge = Charge.objects.first()
-#         self.assertEqual(charge.charge_id, self.valid_charge_id)
-#         self.assertEqual(charge.amount, self.payload_retrieve["amount"])
-#         self.assertEqual(charge.currency, self.payload_retrieve["currency"])
-#         self.assertEqual(charge.status, self.payload_retrieve["status"])
-#         self.assertEqual(charge.url, self.payload_retrieve["url"])
-#         self.assertEqual(charge.timestamp, self.payload_retrieve["timestamp"])
-
-#     @patch("Integration.corridor")
-#     def test_retrieve_charge_not_found(self, mock_corridor):
-#         mock_response = MagicMock()
-#         mock_response.status_code = 404
-#         mock_response.json.return_value = {"errors": ["Charge not found"]}
-#         mock_corridor.return_value = mock_response
-
-#         response = self.client.get(f"/retrive_charge/{self.valid_charge_id}")
-#         self.assertEqual(response.status_code, 404)
-#         self.assertEqual(response.json(), {"errors": ["Charge not found"]})
-
-#         self.assertEqual(Charge.objects.count(), 0)
-
-#     @patch("Integration.corridor")
-#     def test_retrieve_charge_server_error(self, mock_corridor):
-#         mock_response = MagicMock()
-#         mock_response.status_code = 500
-#         mock_response.json.return_value = {"error": "Internal Server Error"}
-#         mock_corridor.return_value = mock_response
-
-#         response = self.client.get(f"/retrive_charge/{self.valid_charge_id}")
-#         self.assertEqual(
-#             response.status_code, 404
-#         )  # Function handles all non-200 as 404
-#         self.assertEqual(response.json(), {"error": "Internal Server Error"})
-
-#         # Verify that no Charge objects are created in the database
-#         self.assertEqual(Charge.objects.count(), 0)
+        self.assertIn("unit", extra_data)
+        self.assertIsInstance(extra_data["unit"], str)

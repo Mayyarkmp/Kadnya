@@ -15,6 +15,10 @@ class PaymentGateway(ABC):
         pass
 
     @staticmethod
+    def retrieve_payment():
+        pass
+
+    @staticmethod
     def refund():
         pass
 
@@ -168,6 +172,7 @@ class Tap(PaymentGateway):
         #     print("#2++++++++++++++++++++++++++++++++++++++++++++   +")
         #     return {"status_code": 500, "error": f"{e}"}
         reference = {"transaction": "2", "order": "2"}
+        print(payload)
         receipt = {"email": payload["email"], "sms": payload["sms"]}
         customer = {
             "first_name": payload["firstName"],
@@ -208,15 +213,17 @@ class Tap(PaymentGateway):
         )
         status_code = response.status_code
         response = response.json()
-        extraData = {
-            "id": response["id"],
-            "amount": response["amount"],
-            "currency": response["currency"],
-            "status": response["status"],
-            "timestamp": response["activities"][0]["created"],
-        }
-        data = {"url": response["transaction"]["url"], "extraData": extraData}
-        return status_code, data
+        if status_code == 200:
+            extraData = {
+                "id": response["id"],
+                "amount": response["amount"],
+                "currency": response["currency"],
+                "status": response["status"],
+                "timestamp": response["activities"][0]["created"],
+            }
+            data = {"url": response["transaction"]["url"], "extraData": extraData}
+            return 200, data
+        return 400, {"error": "Invalid Request", "extra": response}
 
     @staticmethod
     def update_charge(payload, **kwargs):
@@ -231,18 +238,34 @@ class Tap(PaymentGateway):
         return response
 
     @staticmethod
-    def retrieve_charge(payload, **kwargs):  # setup correct unified response
+    def retrieve_payment(payload, **kwargs):  # setup correct unified response
         headers = {
             "Authorization": testKey,
         }
 
         response = requests.get(
-            url=f"https://api.tap.company/v2/charges/{kwargs['charge_id']}",
+            url=f"https://api.tap.company/v2/charges/{payload['charge_id']}",
             headers=headers,
         )
         status_code = response.status_code
         response = response.json()
-        return status_code, response
+        if status_code == 200:
+            extraData = {
+                "merchant_id": response["merchant"]["id"],
+                "source": response["source"]["id"],
+                "url": response["transaction"]["url"],
+                "expiry": response["transaction"]["expiry"]["period"],
+                "unit": response["transaction"]["expiry"]["type"],
+            }
+            data = {
+                "status": response["status"],
+                "amount": response["amount"],
+                "currency": response["currency"],
+                "timestamp": response["transaction"]["created"],
+                "extraData": extraData,
+            }
+            return 200, data
+        return 400, {"error": "Invalid Request", "extra": response}
 
     @staticmethod
     def refund():
@@ -295,8 +318,10 @@ class EdfaPay(PaymentGateway):
         )
         status_code = response.status_code
         response = response.json()
-        data = {"url": response["redirect_url"]}
-        return status_code, data
+        if status_code == 200:
+            data = {"url": response["redirect_url"]}
+            return 200, data
+        return 400, {"error": "Invalid Request", "extra": response}
 
     @staticmethod
     def recur(payload, **kwargs):
@@ -335,23 +360,25 @@ class EdfaPay(PaymentGateway):
         )
         status_code = response.status_code
         response = response.json()
-        date = response["responseBody"]["date"]
-        timestamp = dateToMilliseconds(date)
-        clientName = response["customer"]["name"]
-        clientEmail = response["customer"]["email"]
-        data = {
-            "amount": response["order"]["amount"],
-            "currency": response["order"]["currency"],
-            "status": response["responseBody"]["status"],
-            "timestamp": timestamp,
-            "extraData": {
-                "clientName": clientName,
-                "clientEmail": clientEmail,
-                "payment_id": response["payment_id"],
-                "order_number": response["order"]["number"],
-            },
-        }
-        return status_code, response
+        if status_code == 200:
+            date = response["responseBody"]["date"]
+            timestamp = dateToMilliseconds(date)
+            clientName = response["customer"]["name"]
+            clientEmail = response["customer"]["email"]
+            data = {
+                "amount": response["order"]["amount"],
+                "currency": response["order"]["currency"],
+                "status": response["responseBody"]["status"],
+                "timestamp": timestamp,
+                "extraData": {
+                    "clientName": clientName,
+                    "clientEmail": clientEmail,
+                    "payment_id": response["payment_id"],
+                    "order_number": response["order"]["number"],
+                },
+            }
+            return 200, data
+        return 400, {"error": "Invalid Request", "extra": response}
 
     @staticmethod
     def refund(payload, **kwargs):

@@ -190,6 +190,7 @@ class ChargeResponseSchema(Schema):
 
 class ChargeErrorSchema(Schema):
     error: str
+    extra: dict
 
 
 class Charge500Schema(Schema):
@@ -248,10 +249,11 @@ def update_charge(request, charge_id: str, payload: UpdateChargeSchema):
 
 
 class RetrieveChargeErrorSchema(Schema):
-    errors: list
+    error: str
+    extra: dict = {}
 
 
-class RetrieveChargeSchema(Schema):
+class RetrievePaymentSchema(Schema):
     amount: int
     currency: str
     status: str
@@ -259,20 +261,15 @@ class RetrieveChargeSchema(Schema):
     extraData: dict = {}
 
 
-class payloadRetrieve:
-    charge_id = None
-    serviceProvider = None
-
-
-@paymentGatewayApi.get(
+@paymentGatewayApi.post(
     "/retrieve_payment",
-    response={200: RetrieveChargeSchema, 400: RetrieveChargeErrorSchema},
+    response={200: RetrievePaymentSchema, 400: RetrieveChargeErrorSchema},
 )
 def retrieve_payment(request):
     # special case because the retrieve function needs only charge id, so we need to match the syntax expected in the corridor by sending an object
     payload = json.loads(request.body)
     status_code, response = corridor(payload, task="retrieve_payment")
-    if response.status_code == 200:
+    if status_code == 200:
         # Creating a new object in the data base is optional here, mayebe needs further investigation
         # Charge.objects.create(
         #     charge_id=jsonResponse["id"],
