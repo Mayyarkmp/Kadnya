@@ -147,3 +147,15 @@ def initiate_merchant(request):
                 },
             )
     return render(request, "ui_test/initiate_merchant.html")
+
+
+def card_demo(request):
+    context = {
+        "public_key": "pk_test_...",  # Replace with your actual public key
+        "merchant_id": "merchant_id",  # Replace with your merchant ID
+        "customer_id": "customer_id",  # Replace with your customer ID
+        "customer_email": "test@gmail.com",
+        "customer_phone_country_code": "20",
+        "customer_phone_number": "1000000000",
+    }
+    return render(request, "ui_test/card_sdk.html", context)

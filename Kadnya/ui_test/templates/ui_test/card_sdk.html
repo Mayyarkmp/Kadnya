@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://tap-sdks.b-cdn.net/card/1.0.0-beta/index.js"></script>
+    <title>Card Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f9f9f9;
+        }
+
+        #card-sdk-id {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .response-display, .info-message {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 5px;
+            color: #388e3c;
+            font-weight: bold;
+            display: none;
+            max-width: 400px;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div id="card-sdk-id"></div>
+    <button id="card-v2">Submit</button>
+    <div id="response-display" class="response-display"></div>
+    <div id="info-message" class="info-message"></div>
+
+    <script>
+        const { renderTapCard, Theme, Currencies, Direction, Edges, Locale } = window.CardSDK;
+        const { unmount } = renderTapCard('card-sdk-id', {
+            publicKey: "pk_test_YhUjg9PNT8oDlKJ1aE2fMRz7",
+            merchant: {
+                id: "merchant_4m4B5624940fGnu21mj9W912"
+            },
+            transaction: {
+                amount: 1,
+                currency: Currencies.SAR
+            },
+            customer: {
+                id: "",
+                name: [
+                    {
+                        lang: Locale.EN,
+                        first: 'Test',
+                        last: 'Test',
+                        middle: 'Test'
+                    }
+                ],
+                nameOnCard: 'Test Test',
+                editable: true,
+                contact: {
+                    email: "test@gmail.com",
+                    phone: {
+                        countryCode: "20",
+                        number: "1099137777"
+                    }
+                }
+            },
+            acceptance: {
+                supportedBrands: ['VISA', 'MASTERCARD', 'MADA'],
+                supportedCards: "ALL"
+            },
+            fields: {
+                cardHolder: true
+            },
+            addons: {
+                displayPaymentBrands: true,
+                loader: true,
+                saveCard: true
+            },
+            interface: {
+                locale: Locale.EN,
+                theme: Theme.LIGHT,
+                edges: Edges.CURVED,
+                direction: Direction.LTR
+            },
+            onReady: () => console.log('onReady'),
+            onFocus: () => console.log('onFocus'),
+            onBinIdentification: (data) => console.log('onBinIdentification', data),
+            onValidInput: (data) => console.log('onValidInputChange', data),
+            onInvalidInput: (data) => console.log('onInvalidInput', data),
+            onChangeSaveCardLater: (isSaveCardSelected) => console.log(isSaveCardSelected, " :onChangeSaveCardLater"),
+            onError: (data) => {
+                console.log('onError', data);
+                const errorMessage = document.getElementById("response-display");
+                errorMessage.style.display = "block";
+                errorMessage.textContent = "Error: " + JSON.stringify(data, null, 2);
+            },
+            onSuccess: (data) => {
+                console.log('onSuccess', data);
+                const responseDisplay = document.getElementById("response-display");
+                responseDisplay.style.display = "block";
+                responseDisplay.textContent = "Response: " + JSON.stringify(data, null, 2);
+
+                // Display the informational message
+                const infoMessage = document.getElementById("info-message");
+                infoMessage.style.display = "block";
+                infoMessage.textContent = "Then we call the Charge API and pass the token_id in source.id. We get a URL in the response and redirect the customer to it to complete the payment from the bank page.";
+            }
+        });
+
+        // Button Event Listener
+        document.getElementById("card-v2").addEventListener("click", () => {
+            window.CardSDK.tokenize();
+        });
+    </script>
+</body>
+</html>
