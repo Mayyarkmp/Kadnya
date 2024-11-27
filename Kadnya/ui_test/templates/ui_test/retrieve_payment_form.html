@@ -60,27 +60,43 @@
         button:hover {
             background-color: #0056b3;
         }
+
+        .hidden {
+            display: none;
+        }
+
+        .message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
     </style>
     <script>
-        function updateServiceProvider() {
+        function updateForm() {
             const method = document.getElementById("payment_method").value;
-            const serviceProvider = document.getElementById("serviceProvider");
+            const edfaPayFields = document.getElementById("edfaPayFields");
+            const message = document.getElementById("edfaPayMessage");
 
-            if (method) {
-                serviceProvider.value = method;
+            if (method === "EdfaPay") {
+                edfaPayFields.classList.remove("hidden");
+                message.classList.remove("hidden");
             } else {
-                serviceProvider.value = "";
+                edfaPayFields.classList.add("hidden");
+                message.classList.add("hidden");
             }
         }
     </script>
 </head>
 <body>
-    <h1>Retrieve Charge Operation</h1>
+    <h1>Retrieve Payment Operation</h1>
     <form method="POST" action="{% url 'retrieve_charge_operation' %}">
         {% csrf_token %}
         <div class="form-group">
             <label for="payment_method">Payment Method:</label>
-            <select id="payment_method" name="payment_method" onchange="updateServiceProvider()">
+            <select id="payment_method" name="payment_method" onchange="updateForm()">
                 <option value="">Select a Payment Method</option>
                 <option value="Tap">Tap</option>
                 <option value="EdfaPay">EdfaPay</option>
@@ -93,6 +109,25 @@
         </div>
 
         <input type="hidden" id="serviceProvider" name="serviceProvider" value="">
+
+        <div id="edfaPayMessage" class="message hidden">
+            We don't have the gway_payment_id since the webhook needs to be set up during account creation to receive this information after a transaction is done.
+        </div>
+
+        <div id="edfaPayFields" class="hidden">
+            <div class="form-group">
+                <label for="merchant_id">Merchant ID:</label>
+                <input type="text" id="merchant_id" name="merchant_id">
+            </div>
+            <div class="form-group">
+                <label for="gway_payment_id">Gway Payment ID:</label>
+                <input type="text" id="gway_payment_id" name="gway_payment_id">
+            </div>
+            <div class="form-group">
+                <label for="order_id">Order ID:</label>
+                <input type="text" id="order_id" name="order_id">
+            </div>
+        </div>
 
         <button type="submit">Retrieve</button>
     </form>
