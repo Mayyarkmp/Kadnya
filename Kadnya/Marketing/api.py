@@ -1,5 +1,7 @@
 import requests
 from ninja import NinjaAPI, Schema, UploadedFile, Form, File
+
+from Kadnya.Marketing.Base.Sendgrid.ClientAPI import SendGridClient
 from .models import Lead, License, Wallet, Charge, Transaction
 from .models import File as File2
 from PaymentGateways.corridor import corridor
@@ -7,7 +9,7 @@ from PaymentGateways.corridor import corridor
 whatsAppApi = NinjaAPI(urls_namespace="whatsapp")
 
 # WHATSAPP_BUSINESS_ACCOUNT_ID = "your_business_account_id"
-# ACCESS_TOKEN = "your_access_token"
+ACCESS_TOKEN = "your_access_token"
 # Signup for Meta Business Manager
 # Create a Whatsapp Platform Account
 
@@ -164,3 +166,23 @@ def send_custom_whatsapp_message(request, payload: WhatsAppMessagePayload):
         return response.json()
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}, 400
+
+
+@whatsAppApi.post("/send_email")
+def send_email(request):
+    payload = request.body
+    status_code, response = corridor(payload, task="send_email")
+    if status_code == 200:
+        return 200, {"response": response}
+    else:
+        return 400, {"error": response}
+
+
+@whatsAppApi.post("/get_statistics")
+def get_statistics(request):
+    payload = request.body
+    status_code, response = corridor(payload, task="get_statistics")
+    if status_code == 200:
+        return 200, {"response": response}
+    else:
+        return 400, {"error": response}
