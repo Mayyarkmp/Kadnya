@@ -1,9 +1,0 @@
-# ignore all .env files
-*.env
-# ignore migrations files
-*/migrations/*
-# ignore cache
-**/__pycache__/
-*.pyc
-*cert.pem
-*key.pem
