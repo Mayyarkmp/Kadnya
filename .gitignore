@@ -1,0 +1,14 @@
+# ignore all .env files
+*.env
+# ignore migrations files
+*/migrations/*
+# ignore cache
+**/__pycache__/
+*.pyc
+*cert.pem
+*key.pem
+*Pipfile
+*Pipfile.lock
+*.idea
+*Calendars/GoogleCalendar/Credentials
+*Calendars/TestData/calendarUserMock.json"Calendars/TestData/calendarUserMock.json" 

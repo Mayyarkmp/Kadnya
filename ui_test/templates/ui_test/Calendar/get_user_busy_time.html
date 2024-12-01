@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get user Busy time</title>
+    <script>
+        async function fetchApiData() {
+
+            const serviceProvider = document.getElementById('serviceProvider').value;
+            const userUid = document.getElementById('userUid').value;
+
+            if (!serviceProvider || !userUid) {
+                alert('Please fill in both fields.');
+                return;
+            }
+
+            try {
+                const url = `https://127.0.0.1:8000/calendar/busy_time?uid=${encodeURIComponent(userUid)}&sp=${encodeURIComponent(serviceProvider)}`;
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    const tableBody = document.getElementById('responseTableBody');
+                    tableBody.innerHTML = ''; // Clear existing rows
+                    data.user_busy_time.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        ${Object.keys(item)
+                            .map((key) => `<td><strong>${key}</strong>: ${item[key]}</td>`)
+                            .join('')}
+                    `;
+                    tableBody.appendChild(row);
+                });
+                } else {
+                    alert(data.message || 'Failed to fetch data');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('An error occurred while fetching data.');
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Get user busy time API</h1>
+    <div>
+        <label for="serviceProvider">Service Provider:</label>
+        <input type="text" id="serviceProvider" placeholder="Enter service provider">
+    </div>
+    <div>
+        <label for="userUid">User UID:</label>
+        <input type="text" id="userUid" placeholder="Enter user UID">
+    </div>
+    <div>
+        <button onclick="fetchApiData()">Fetch Data</button>
+    </div>
+    <hr>
+    <h2>API Response</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="responseTableBody">
+            <!-- API response rows will be added here -->
+        </tbody>
+    </table>
+</body>
+</html>

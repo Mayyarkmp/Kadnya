@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calendars Options</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .card-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            width: 200px;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .card a:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Select the operation</h1>
+    <div class="card-container">
+        <div class="card">
+            <a href="{% url 'get_user_busy_time' %}">Get user busy time</a>
+        </div>
+        <div class="card">
+            <a href="{% url 'get_scheduled_events' %}">Get user scheduled events</a>
+        </div>
+        <div class="card">
+            <a href="{% url 'user_scheduled_events_invitees' %}">Get user scheduled events invitees</a>
+        </div>
+        <div class="card">
+            <a href="{% url 'scheduled_event_details' %}">Get scheduled event details</a>
+        </div>
+        <div class="card">
+            <a href="{% url 'schedule_event' %}">Schedule event</a>
+        </div>
+    </div>
+</body>
+</html>

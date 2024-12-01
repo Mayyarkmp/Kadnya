@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Scheduled Event Details</title>
+    <script>
+async function fetchApiData() {
+    const serviceProvider = document.getElementById('serviceProvider').value;
+    const userUid = document.getElementById('userUid').value;
+    const eventUid = document.getElementById('event_uid').value;
+
+    if (!serviceProvider || !userUid || !eventUid) {
+        alert('Please fill in all fields.');
+        return;
+    }
+
+    try {
+        const url = `https://127.0.0.1:8000/calendar/scheduled_event_details?uid=${encodeURIComponent(userUid)}&sp=${encodeURIComponent(serviceProvider)}&event_uuid=${encodeURIComponent(eventUid)}`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            const tableBody = document.getElementById('responseTableBody');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            Object.keys(data).forEach((key, index) => {
+                const value = data[key];
+
+                // If the value is an object, iterate over its keys
+                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    Object.keys(value).forEach((subKey) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${key}.${subKey}</td>
+                            <td>${value[subKey]}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    // Handle non-object values
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${key}</td>
+                        <td>${value}</td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+            });
+        } else {
+            alert(data.message || 'Failed to fetch data');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while fetching data.');
+    }
+}
+    </script>
+</head>
+<body>
+    <h1>Get user scheduled event details API</h1>
+    <div>
+        <label for="serviceProvider">Service Provider:</label>
+        <input type="text" id="serviceProvider" placeholder="Enter service provider">
+    </div>
+    <div>
+        <label for="userUid">User UID:</label>
+        <input type="text" id="userUid" placeholder="Enter user UID">
+    </div>
+    <div>
+        <label for="event_uid">Event UID:</label>
+        <input type="text" id="event_uid" placeholder="Enter event UID">
+    </div>
+    <div>
+        <button onclick="fetchApiData()">Fetch Data</button>
+    </div>
+    <hr>
+    <h2>API Response</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="responseTableBody">
+            <!-- API response rows will be added here -->
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendly Scheduling Widget</title>
+    <script src="https://assets.calendly.com/assets/external/widget.js" type="text/javascript"></script>
+</head>
+<body>
+    <h1>Calendly Scheduling Widget</h1>
+    <div>
+        <label for="schedulingUrl">Scheduling URL:</label>
+        <input type="text" id="schedulingUrl" placeholder="Enter Calendly scheduling URL">
+    </div>
+    <div>
+        <button onclick="showCalendlyWidget()">Open Scheduling Widget</button>
+    </div>
+    <hr>
+    <script>
+        function showCalendlyWidget() {
+            const schedulingUrl = document.getElementById('schedulingUrl').value;
+
+            // Validate the URL
+            if (!schedulingUrl) {
+                alert('Please enter a Calendly scheduling URL.');
+                return;
+            }
+
+            Calendly.showPopupWidget(schedulingUrl);
+        }
+    </script>
+</body>
+</html>

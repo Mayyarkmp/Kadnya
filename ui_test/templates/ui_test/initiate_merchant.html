@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Initiate Merchant</title>
+    <style>
+        /* Base styling */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        form {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 20px auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .dynamic-list {
+            margin-top: 10px;
+        }
+
+        .dynamic-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .dynamic-item input {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .dynamic-item button {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .dynamic-item button:hover {
+            background-color: #cc0000;
+        }
+
+        .add-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        .add-btn:hover {
+            background-color: #0056b3;
+        }
+
+        button[type="submit"] {
+            display: block;
+            margin: 20px auto 0;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Initiate Merchant</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="payment_gateway">Payment Gateway:</label>
+            <select id="payment_gateway" name="payment_gateway" required>
+                <option value="EdfaPay">EdfaPay</option>
+                <option value="Tap">Tap</option>
+            </select>
+        </div>
+
+        <!-- Message for EdfaPay -->
+        <div id="edfa-message" style="display: none;">
+            <p>There's no details about this operation from Edfa yet.</p>
+        </div>
+
+        <!-- Tap Fields -->
+        <div id="tap-fields" style="display: none;">
+            <!-- All fields here -->
+            <div class="form-group">
+                <label for="brandNameEn">Brand Name (English):</label>
+                <input type="text" id="brandNameEn" name="brandNameEn">
+            </div>
+            <div class="form-group">
+                <label for="brandNameAr">Brand Name (Arabic):</label>
+                <input type="text" id="brandNameAr" name="brandNameAr">
+            </div>
+            <div class="form-group">
+                <label for="brandLogo_id">Brand Logo ID:</label>
+                <input type="text" id="brandLogo_id" name="brandLogo_id">
+            </div>
+            <div class="form-group">
+                <label for="entityCountry">Entity Country:</label>
+                <input type="text" id="entityCountry" name="entityCountry">
+            </div>
+            <div class="form-group">
+                <label for="entity_is_licensed">Is Entity Licensed:</label>
+                <select id="entity_is_licensed" name="entity_is_licensed">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="entityLicenseNumber">Entity License Number:</label>
+                <input type="text" id="entityLicenseNumber" name="entityLicenseNumber">
+            </div>
+            <div class="form-group">
+                <label for="entityLicenseCountry">Entity License Country:</label>
+                <input type="text" id="entityLicenseCountry" name="entityLicenseCountry">
+            </div>
+            <div class="form-group">
+                <label for="entityLicenseType">Entity License Type:</label>
+                <input type="text" id="entityLicenseType" name="entityLicenseType">
+            </div>
+            <div class="form-group">
+                <label for="entityLicenseDocumentType">Entity License Document Type:</label>
+                <input type="text" id="entityLicenseDocumentType" name="entityLicenseDocumentType">
+            </div>
+            <div class="form-group">
+                <label for="entityLicenseDocumentNumber">Entity License Document Number:</label>
+                <input type="text" id="entityLicenseDocumentNumber" name="entityLicenseDocumentNumber">
+            </div>
+            <div class="form-group">
+                <label for="entityLicenseDocumentIssuingCountry">Entity License Document Issuing Country:</label>
+                <input type="text" id="entityLicenseDocumentIssuingCountry" name="entityLicenseDocumentIssuingCountry">
+            </div>
+            <div class="form-group">
+                <label for="entityLicenseDocumentIssuingDate">Entity License Document Issuing Date:</label>
+                <input type="text" id="entityLicenseDocumentIssuingDate" name="entityLicenseDocumentIssuingDate">
+            </div>
+            <div class="form-group">
+                <label for="entityLicenseDocumentExpiryDate">Entity License Document Expiry Date:</label>
+                <input type="text" id="entityLicenseDocumentExpiryDate" name="entityLicenseDocumentExpiryDate">
+            </div>
+            <div class="form-group">
+                <label for="walletBankName">Wallet Bank Name:</label>
+                <input type="text" id="walletBankName" name="walletBankName">
+            </div>
+
+            <div class="form-group">
+                <label for="walletAccountName">Wallet Account Name:</label>
+                <input type="text" id="walletAccountName" name="walletAccountName">
+            </div>
+
+            <div class="form-group">
+                <label for="walletAccountNumber">Wallet Account Number:</label>
+                <input type="text" id="walletAccountNumber" name="walletAccountNumber">
+            </div>
+
+            <div class="form-group">
+                <label for="walletAccountSwift">Wallet Account SWIFT:</label>
+                <input type="text" id="walletAccountSwift" name="walletAccountSwift">
+            </div>
+
+            <div class="form-group">
+                <label for="walletAccountIban">Wallet Account IBAN:</label>
+                <input type="text" id="walletAccountIban" name="walletAccountIban">
+            </div>
+
+            <div class="form-group">
+                <label for="WalletBankDocumentType">Wallet Bank Document Type:</label>
+                <input type="text" id="WalletBankDocumentType" name="WalletBankDocumentType">
+            </div>
+
+            <div class="form-group">
+                <label for="WalletBankDocumentNumber">Wallet Bank Document Number:</label>
+                <input type="text" id="WalletBankDocumentNumber" name="WalletBankDocumentNumber">
+            </div>
+
+            <div class="form-group">
+                <label for="WalletBankDocumentIssuingCountry">Wallet Bank Document Issuing Country:</label>
+                <input type="text" id="WalletBankDocumentIssuingCountry" name="WalletBankDocumentIssuingCountry">
+            </div>
+
+            <div class="form-group">
+                <label for="WalletBankDocumentIssuingDate">Wallet Bank Document Issuing Date:</label>
+                <input type="text" id="WalletBankDocumentIssuingDate" name="WalletBankDocumentIssuingDate">
+            </div>
+            <div class="form-group">
+                <label for="userFirstName">User First Name:</label>
+                <input type="text" id="userFirstName" name="userFirstName">
+            </div>
+
+            <div class="form-group">
+                <label for="userMiddleName">User Middle Name:</label>
+                <input type="text" id="userMiddleName" name="userMiddleName">
+            </div>
+
+            <div class="form-group">
+                <label for="userLastName">User Last Name:</label>
+                <input type="text" id="userLastName" name="userLastName">
+            </div>
+
+            <div class="form-group">
+                <label for="userLang">User Language:</label>
+                <input type="text" id="userLang" name="userLang">
+            </div>
+
+            <div class="form-group">
+                <label for="userTitle">User Title:</label>
+                <input type="text" id="userTitle" name="userTitle">
+            </div>
+
+            <div class="form-group">
+                <label for="userEmailType">User Email Type:</label>
+                <input type="text" id="userEmailType" name="userEmailType">
+            </div>
+
+            <div class="form-group">
+                <label for="userEmailAddress">User Email Address:</label>
+                <input type="text" id="userEmailAddress" name="userEmailAddress">
+            </div>
+
+            <div class="form-group">
+                <label for="userEmailPrimary">User Email Primary:</label>
+                <input type="text" id="userEmailPrimary" name="userEmailPrimary">
+            </div>
+
+            <div class="form-group">
+                <label for="userPhoneType">User Phone Type:</label>
+                <input type="text" id="userPhoneType" name="userPhoneType">
+            </div>
+
+            <div class="form-group">
+                <label for="userPhoneCountryCode">User Phone Country Code:</label>
+                <input type="text" id="userPhoneCountryCode" name="userPhoneCountryCode">
+            </div>
+
+            <div class="form-group">
+                <label for="userPhoneNumber">User Phone Number:</label>
+                <input type="text" id="userPhoneNumber" name="userPhoneNumber">
+            </div>
+
+            <div class="form-group">
+                <label for="userNationality">User Nationality:</label>
+                <input type="text" id="userNationality" name="userNationality">
+            </div>
+
+            <div class="form-group">
+                <label for="userIdentificationNumber">User Identification Number:</label>
+                <input type="text" id="userIdentificationNumber" name="userIdentificationNumber">
+            </div>
+
+            <div class="form-group">
+                <label for="userIdentificationType">User Identification Type:</label>
+                <input type="text" id="userIdentificationType" name="userIdentificationType">
+            </div>
+
+            <div class="form-group">
+                <label for="userIdentificationIssuer">User Identification Issuer:</label>
+                <input type="text" id="userIdentificationIssuer" name="userIdentificationIssuer">
+            </div>
+            
+            <div class="form-group">
+                <label for="userBirthCity">User Birth City:</label>
+                <input type="text" id="userBirthCity" name="userBirthCity">
+            </div>
+
+            <div class="form-group">
+                <label for="userBirthDate">User Birth Date:</label>
+                <input type="text" id="userBirthDate" name="userBirthDate">
+            </div>
+
+            <div class="form-group">
+                <label for="postUrl">Post URL:</label>
+                <input type="text" id="postUrl" name="postUrl">
+            </div>
+            <!-- Dynamic List Example -->
+            <div class="form-group">
+                <label for="entityLicenseDocumentImages">Entity License Document Images:</label>
+                <div class="dynamic-list" id="entityLicenseDocumentImages-list"></div>
+                <button type="button" class="add-btn" onclick="addDynamicInput('entityLicenseDocumentImages-list', 'entityLicenseDocumentImages')">+ Add Image ID</button>
+            </div>
+            <div class="form-group">
+                <label for="WalletBankDocumentImages">Wallet Bank Document Images:</label>
+                <div class="dynamic-list" id="WalletBankDocumentImages-list"></div>
+                <button type="button" class="add-btn" onclick="addDynamicInput('WalletBankDocumentImages-list', 'WalletBankDocumentImages')">+ Add Image ID</button>
+            </div>
+            <div class="form-group">
+                <label for="userIdentificationImages">User Identification Images:</label>
+                <div class="dynamic-list" id="userIdentificationImages-list"></div>
+                <button type="button" class="add-btn" onclick="addDynamicInput('userIdentificationImages-list', 'userIdentificationImages')">+ Add Image ID</button>
+            </div>
+                <div class="form-group">
+                <label for="userBirthCountry">User Birth Country:</label>
+                <input type="text" id="userBirthCountry" name="userBirthCountry">
+            </div>
+
+
+
+            <!-- Add rest of the fields with similar structure -->
+        </div>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        // Toggle fields based on payment gateway
+        const paymentGatewaySelect = document.getElementById('payment_gateway');
+        const edfaMessage = document.getElementById('edfa-message');
+        const tapFields = document.getElementById('tap-fields');
+
+        paymentGatewaySelect.addEventListener('change', function () {
+            if (this.value === 'EdfaPay') {
+                edfaMessage.style.display = 'block';
+                tapFields.style.display = 'none';
+            } else if (this.value === 'Tap') {
+                edfaMessage.style.display = 'none';
+                tapFields.style.display = 'block';
+            } else {
+                edfaMessage.style.display = 'none';
+                tapFields.style.display = 'none';
+            }
+        });
+
+        // Dynamic List Input
+        function addDynamicInput(containerId, inputName) {
+            const container = document.getElementById(containerId);
+            const newItem = document.createElement('div');
+            newItem.className = 'dynamic-item';
+            newItem.innerHTML = `
+                <input type="text" name="${inputName}[]" placeholder="Enter value">
+                <button type="button" onclick="removeDynamicInput(this)">Remove</button>
+            `;
+            container.appendChild(newItem);
+        }
+
+        function removeDynamicInput(button) {
+            const item = button.parentElement;
+            item.remove();
+        }
+    </script>
+</body>
+</html>

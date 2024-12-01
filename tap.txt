@@ -1,0 +1,18 @@
+
+what is a customer?
+
+
+Front sends a trasncation request to the back, 2 cases:
+should we add the transaction to our database immediately or only if the request is valid
+1. transaction before validation -> if the credentials are invalid, then the transaction we made is bogus
+2. how can validation even be done 
+
+
+We need to save the Charge in case it gets
+
+
+
+
+In Tap, we get charge_id Redirecturl and status + timestamp + currency amount
+in EdfaPay we only get Redirecturl
+what should I return to the front, only url?
