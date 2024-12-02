@@ -126,12 +126,8 @@
                 console.log('onSuccess', data);
                 const responseDisplay = document.getElementById("response-display");
                 responseDisplay.style.display = "block";
-                responseDisplay.textContent = "Response: " + JSON.stringify(data, null, 2);
+                responseDisplay.textContent = JSON.stringify(data['id'], null, 2) + "\nCopy the token_id and pass it in charge operation in source field";
 
-                // Display the informational message
-                const infoMessage = document.getElementById("info-message");
-                infoMessage.style.display = "block";
-                infoMessage.textContent = "Then we call the Charge API and pass the token_id in source.id. We get a URL in the response and redirect the customer to it to complete the payment from the bank page.";
             }
         });
 

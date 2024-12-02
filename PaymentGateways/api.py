@@ -200,7 +200,7 @@ def charge(request):
         Transaction.objects.create(
             amount=payload["amount"],
             currency=payload["currency"],
-            serviceProvider="Tap",
+            serviceProvider=payload["serviceProvider"],
             user_id=payload["user_id"],
             merchant_id=payload["merchant_id"],
             status="Initiated",

@@ -11,9 +11,7 @@ def payment_options(request):
 def charge_operation(request):
     if request.method == "POST":
         serviceProvider = request.POST.get("serviceProvider")
-        print(
-            f"Amount: {request.POST.get('amount')}, Currency: {request.POST.get('currency')}"
-        )
+
         if serviceProvider == "Tap":
             payload = {
                 field: request.POST.get(field)
@@ -42,18 +40,22 @@ def charge_operation(request):
                     "redirectUrl",
                 ]
             }
-            print("Payload ------ ", payload)
             response = requests.post(
                 "http://localhost:8000/payment_gateways/charge", json=payload
             )
-            print(response.json())
-            if response.status_code == 200:
+            status_code = response.status_code
+            response = response.json()
+            if status_code == 200:
                 return render(
-                    request, "ui_test/success.html", {"message": "Charge successful!"}
+                    request,
+                    "ui_test/success.html",
+                    {
+                        "message": f"charge id: {response['extraData']['id']}, url to complete payment: {response['url']}"
+                    },
                 )
             else:
                 return render(
-                    request, "ui_test/failure.html", {"message": "Charge failed!"}
+                    request, "ui_test/failure.html", {"message": response["extra"]}
                 )
         elif serviceProvider == "EdfaPay":
             payload = {
