@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "Calendars",
     "ui_test",
+    "GoogleAnalytics",
 ]
 
 MIDDLEWARE = [

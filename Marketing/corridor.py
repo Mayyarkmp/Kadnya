@@ -1,4 +1,4 @@
-from Kadnya.Marketing.Base.Sendgrid.ClientAPI import SendGridClient
+from Marketing.Base.Sendgrid.ClientAPI import SendGridClient
 from PaymentGateways.Base.service_providers import Whatsapp
 
 
