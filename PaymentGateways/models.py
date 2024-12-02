@@ -19,9 +19,11 @@ class RequestLog(models.Model):
 
 # ------------------------------------TAP------------------------------------#
 class Lead(models.Model):
-    lead_id = models.CharField(max_length=70)
-    en_name = models.CharField(max_length=30)
-    ar_name = models.CharField(max_length=30)
+    lead_id = models.CharField(max_length=70, null=True, blank=True)
+    brandNameEn = models.CharField(max_length=30, null=True, blank=True)
+    brandNameAr = models.CharField(max_length=30, null=True, blank=True)
+    userFirstName = models.CharField(max_length=30, null=True, blank=True)
+    userLastName = models.CharField(max_length=30, null=True, blank=True)
     country = models.CharField(max_length=10)
     is_licensed = models.BooleanField()
 

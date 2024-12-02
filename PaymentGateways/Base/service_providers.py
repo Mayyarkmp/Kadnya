@@ -1,7 +1,7 @@
 from abc import ABC
 import requests
 import os
-from PaymentGateways.models import Transaction
+from PaymentGateways.models import Lead, Transaction
 from Kadnya.settings import paymenyTechKey, testKey, SECRET_KEY
 from django.core.files.storage import default_storage
 
@@ -143,6 +143,13 @@ class Tap(PaymentGateway):
         )
         status_code = response.status_code
         response = response.json()
+        Lead.objects.create(
+            brandNameEn=payload["brandNameEn"],
+            brandNameAr=payload["brandNameAr"],
+            userFirstName=payload["userFirstName"],
+            userLastName=payload["userLastName"],
+            country=payload["userBirthCountry"],
+        )
         return status_code, response
 
     @staticmethod
@@ -228,18 +235,7 @@ class Tap(PaymentGateway):
                 "timestamp": response["activities"][0]["created"],
             }
             data = {"url": response["transaction"]["url"], "extraData": extraData}
-            try:
-                Transaction.objects.create(
-                    amount=payload["amount"],
-                    currency=payload["currency"],
-                    serviceProvider="Tap",
-                    user_id=payload["user_id"],
-                    merchant_id=payload["merchant_id"],
-                    status="Initiated",
-                )
-                print("Successfully created")
-            except Exception as e:
-                print("Transaction was not added to database")
+
             return 200, data
         return 400, {"error": "Invalid Request", "extra": response}
 
@@ -335,6 +331,18 @@ class EdfaPay(PaymentGateway):
         status_code = response.status_code
         response = response.json()
         print(response)
+        try:
+            Transaction.objects.create(
+                amount=payload["amount"],
+                currency=payload["currency"],
+                serviceProvider="Edfa",
+                user_id=payload["user_id"],
+                merchant_id=payload["merchant_id"],
+                status="Initiated",
+            )
+            print("Successfully created")
+        except Exception as e:
+            print("Transaction was not added to database", e)
         if status_code == 200:
             data = {"url": response["redirect_url"]}
             return 200, data

@@ -124,22 +124,65 @@ def retrieve_charge_operation(request):
 def initiate_merchant(request):
     if request.method == "POST":
         payment_gateway = request.POST.get("payment_gateway")
+
         if payment_gateway == "EdfaPay":
             return render(
                 request,
                 "ui_test/initiate_merchant.html",
                 {"message": "There's no details about this operation from Edfa yet."},
             )
+
         elif payment_gateway == "Tap":
-            form_data = request.POST
-            return render(
-                request,
-                "ui_test/success.html",
-                {
-                    "message": "Tap merchant details submitted successfully!",
-                    "data": form_data,
-                },
-            )
+            # Extract the form data
+            form_data = request.POST.dict()  # Convert POST data to a dictionary
+
+            # Send the data to the specified endpoint
+            try:
+                response = requests.post(
+                    "http://127.0.0.1:8000/payment_gateways/create_lead",
+                    data=form_data,
+                )
+
+                # Check if the response was successful
+                if response.status_code == 200:
+                    response_data = response.json()
+                    if response_data.get("status") == "yes":
+                        # Show the "id" from the response
+                        return render(
+                            request,
+                            "ui_test/success.html",
+                            {
+                                "message": "Tap merchant details submitted successfully!",
+                                "id": response_data.get(
+                                    "id"
+                                ),  # Extract "id" from the response
+                            },
+                        )
+                    else:
+                        # Handle if the response status is not "yes"
+                        return render(
+                            request,
+                            "ui_test/initiate_merchant.html",
+                            {"message": "Submission failed. Please try again."},
+                        )
+                else:
+                    # Handle HTTP error responses
+                    return render(
+                        request,
+                        "ui_test/initiate_merchant.html",
+                        {
+                            "message": f"Error: {response.status_code}. Failed to submit."
+                        },
+                    )
+
+            except requests.exceptions.RequestException as e:
+                # Handle connection errors
+                return render(
+                    request,
+                    "ui_test/initiate_merchant.html",
+                    {"message": f"Connection error: {e}. Please try again."},
+                )
+
     return render(request, "ui_test/initiate_merchant.html")
 
 

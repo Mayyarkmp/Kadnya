@@ -74,19 +74,15 @@ class LeadResponseSchema(Schema):
     "/create_lead", response={200: LeadResponseSchema, 400: LeadErrorSchema}
 )
 def create_lead(request, payload: CreateLeadSchema):
-    status_code, response = corridor(payload.dict(), task="create_lead")
+    payload = payload.dict()
+    status_code, response = corridor(payload, task="create_lead")
 
     if "errors" in response.keys():
         status_code = 400
 
     if status_code == 200:
-        # Lead.objects.create(
-        #     lead_id=response["id"],
-        #     en_name=payload.brandNameEn,
-        #     ar_name=payload.brandNameAr,
-        #     country=payload.country,
-        #     is_licensed=payload.is_licensed,
-        # )
+        lead = Lead.objects.get(brandNameEn=payload["brandNameEn"])
+        lead.lead_id = response["id"]
         # License.objects.create(
         #     number=payload.licenseNumber,
         #     country=payload.licenseConutry,
@@ -130,7 +126,6 @@ class FileErrorSchema(Schema):
 def create_file(request, payload: Form[CreateFileSchema], file: File[UploadedFile]):
     response = corridor(payload, task="create_file", file=file)
     jsonResponse = response.json()
-    print(response)
     status_code = response.status_code
     if status_code == 200:
         File2.objects.create(file_id=jsonResponse["id"])
@@ -193,16 +188,6 @@ class Charge500Schema(Schema):
     response: dict
 
 
-@paymentGatewayApi.post("/test")
-def test(request):
-    try:
-        payload = json.loads(request.body)
-        print(payload)
-        return {"received": payload}
-    except json.JSONDecodeError:
-        return {"error": "Invalid JSON payload"}, 400
-
-
 # Need update charge in the case where OTP is required such as STCpay
 @paymentGatewayApi.post(
     "/charge",
@@ -211,6 +196,18 @@ def test(request):
 def charge(request):
     payload = json.loads(request.body)
     status_code, response = corridor(payload, task="charge")
+    try:
+        Transaction.objects.create(
+            amount=payload["amount"],
+            currency=payload["currency"],
+            serviceProvider="Tap",
+            user_id=payload["user_id"],
+            merchant_id=payload["merchant_id"],
+            status="Initiated",
+        )
+        print("Successfully created")
+    except Exception as e:
+        print("Transaction was not added to database", e)
     if status_code == 200:
         # Transaction.objects.create(
         #     amount=payload["amount"],
