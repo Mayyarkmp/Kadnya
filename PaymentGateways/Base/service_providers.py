@@ -228,6 +228,18 @@ class Tap(PaymentGateway):
                 "timestamp": response["activities"][0]["created"],
             }
             data = {"url": response["transaction"]["url"], "extraData": extraData}
+            try:
+                Transaction.objects.create(
+                    amount=payload["amount"],
+                    currency=payload["currency"],
+                    serviceProvider="Tap",
+                    user_id=payload["user_id"],
+                    merchant_id=payload["merchant_id"],
+                    status="Initiated",
+                )
+                print("Successfully created")
+            except Exception as e:
+                print("Transaction was not added to database")
             return 200, data
         return 400, {"error": "Invalid Request", "extra": response}
 

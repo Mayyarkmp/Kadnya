@@ -153,3 +153,27 @@ def card_demo(request):
         "customer_phone_number": "1000000000",
     }
     return render(request, "ui_test/card_sdk.html", context)
+
+
+def fetch_analytics_view(request):
+    response_data = None
+    error_message = None
+
+    if request.method == "GET" and "property_id" in request.GET:
+        property_id = request.GET.get("property_id")
+        url = f"http://127.0.0.1:8000/google_analytics/fetch_analytics?property_id={property_id}"
+
+        try:
+            response = requests.get(url, headers={"accept": "/"})
+            if response.status_code == 200:
+                response_data = response.json()  # Assuming the response is JSON
+            else:
+                error_message = f"Error: Received status code {response.status_code}"
+        except requests.RequestException as e:
+            error_message = str(e)
+
+    return render(
+        request,
+        "ui_test/fetch_analytics.html",
+        {"response_data": response_data, "error_message": error_message},
+    )

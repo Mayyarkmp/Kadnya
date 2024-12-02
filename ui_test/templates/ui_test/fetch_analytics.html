@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch Google Analytics</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fetch Google Analytics</h1>
+    <form method="get" action="">
+        <label for="property_id">Property ID:</label>
+        <input type="text" id="property_id" value="468756673" name="property_id" required>
+        <button type="submit">Fetch</button>
+    </form>
+
+    {% if response_data %}
+        <h2>Analytics Data</h2>
+
+        <h3>Dimension Headers</h3>
+        <p>{{ response_data.dimension_headers|join:", " }}</p>
+
+        <h3>Metric Headers</h3>
+        <p>{{ response_data.metric_headers|join:", " }}</p>
+
+        <h3>Data Table</h3>
+        <table>
+            <thead>
+                <tr>
+                    {% for header in response_data.dimension_headers %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                    {% for header in response_data.metric_headers %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in response_data.rows %}
+                    <tr>
+                        {% for dimension in row.dimensions %}
+                            <td>{{ dimension }}</td>
+                        {% endfor %}
+                        {% for metric in row.metrics %}
+                            <td>{{ metric }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% elif error_message %}
+        <h2>Error</h2>
+        <p style="color: red;">{{ error_message }}</p>
+    {% endif %}
+</body>
+</html>

@@ -9,4 +9,5 @@ urlpatterns = [
     ),
     path("initiate-merchant/", views.initiate_merchant, name="initiate_merchant"),
     path("card-sdk/", views.card_demo, name="card_sdk"),
+    path("wtf/", views.fetch_analytics_view, name="wtf"),
 ]
