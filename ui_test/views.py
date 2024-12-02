@@ -10,9 +10,10 @@ def payment_options(request):
 
 def charge_operation(request):
     if request.method == "POST":
-        print("------------------------Here------------------------")
         serviceProvider = request.POST.get("serviceProvider")
-
+        print(
+            f"Amount: {request.POST.get('amount')}, Currency: {request.POST.get('currency')}"
+        )
         if serviceProvider == "Tap":
             payload = {
                 field: request.POST.get(field)
@@ -41,12 +42,11 @@ def charge_operation(request):
                     "redirectUrl",
                 ]
             }
-
-            # Make a POST request to the backend endpoint
+            print("Payload ------ ", payload)
             response = requests.post(
                 "http://localhost:8000/payment_gateways/charge", json=payload
             )
-
+            print(response.json())
             if response.status_code == 200:
                 return render(
                     request, "ui_test/success.html", {"message": "Charge successful!"}
@@ -56,27 +56,26 @@ def charge_operation(request):
                     request, "ui_test/failure.html", {"message": "Charge failed!"}
                 )
         elif serviceProvider == "EdfaPay":
-            # Process EdfaPay data
             payload = {
                 "serviceProvider": "EdfaPay",
-                "amount": request.POST.get("amount"),
-                "order_id": request.POST.get("order_id"),
-                "currency": request.POST.get("currency"),
-                "description": request.POST.get("description"),
-                "customer_id": request.POST.get("customer_id"),
-                "merchant_id": request.POST.get("merchant_id"),
-                "firstName": request.POST.get("firstName"),
-                "lastName": request.POST.get("lastName"),
-                "address": request.POST.get("address"),
-                "country": request.POST.get("country"),
-                "city": request.POST.get("city"),
-                "zip": request.POST.get("zip"),
-                "email": request.POST.get("email"),
-                "phone": request.POST.get("phone"),
-                "ip": request.POST.get("ip"),
-                "redirectUrl": request.POST.get("redirectUrl"),
-                "pass": request.POST.get("pass"),
-                "req_token": request.POST.get("req_token"),
+                "amount": request.POST.get("edfa_amount"),
+                "order_id": request.POST.get("edfa_order_id"),
+                "currency": request.POST.get("edfa_currency"),
+                "description": request.POST.get("edfa_description"),
+                "customer_id": request.POST.get("edfa_customer_id"),
+                "merchant_id": request.POST.get("edfa_merchant_id"),
+                "firstName": request.POST.get("edfa_firstName"),
+                "lastName": request.POST.get("edfa_lastName"),
+                "address": request.POST.get("edfa_address"),
+                "country": request.POST.get("edfa_country"),
+                "city": request.POST.get("edfa_city"),
+                "zip": request.POST.get("edfa_zip"),
+                "email": request.POST.get("edfa_email"),
+                "phone": request.POST.get("edfa_phone"),
+                "ip": request.POST.get("edfa_ip"),
+                "redirectUrl": request.POST.get("edfa_redirectUrl"),
+                "pass": request.POST.get("edfa_pass"),
+                "req_token": request.POST.get("edfa_req_token"),
             }
             response = requests.post(
                 "http://localhost:8000/payment_gateways/charge", json=payload
@@ -95,22 +94,18 @@ def charge_operation(request):
 
 def retrieve_charge_operation(request):
     if request.method == "POST":
-        # Extract form data
         form = RetrieveChargeForm(request.POST)
         if form.is_valid():
             charge_id = form.cleaned_data.get("charge_id")
-            # Prepare payload
             payload = {
                 "charge_id": charge_id,
                 "serviceProvider": "Tap",
             }
 
-            # Send POST request
             response = requests.post(
                 "http://localhost:8000/payment_gateways/retrieve_payment", json=payload
             )
 
-            # Handle response
             if response.status_code == 200:
                 return render(
                     request, "ui_test/success.html", {"message": "Retrieve successful!"}
@@ -136,7 +131,6 @@ def initiate_merchant(request):
                 {"message": "There's no details about this operation from Edfa yet."},
             )
         elif payment_gateway == "Tap":
-            # Handle the Tap payment gateway form submission here
             form_data = request.POST
             return render(
                 request,
